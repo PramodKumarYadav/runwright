@@ -2,7 +2,7 @@
 
 A GitHub action to calculate required runners to finish your tests in x mins. 
 
-## Known limitations. 
+## Known limitations
 
 - This action would work best when tests are more or less of same execution time length and they are all run in parallel using `fully parallel = true`. 
 
