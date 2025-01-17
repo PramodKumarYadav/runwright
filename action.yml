@@ -89,7 +89,7 @@ runs:
 
           # Debug: Display the JSON array
           echo "JSON array:"
-          echo "$json_array"
+          # echo "$json_array"
 
           # Save the JSON array to GITHUB_OUTPUT, ensuring proper escaping
           TEST_LIST=$(echo "$json_array" | jq -c)
