@@ -67,7 +67,7 @@ runs:
         id: list-tests
         run: |
           # Run the Playwright test list command
-          test_list=$(${{ pw-command-to-execute }} --list --reporter=list 2>&1 || true)
+          test_list=$(${{ inputs.pw-command-to-execute }} --list --reporter=list 2>&1 || true)
 
           # Check if no tests were found
           if echo "$test_list" | grep -q "Error: No tests found."; then
@@ -95,6 +95,7 @@ runs:
           TEST_LIST=$(echo "$json_array" | jq -c)
           echo "TEST_LIST=$TEST_LIST" >> $GITHUB_ENV
           echo "TEST_LIST=$TEST_LIST" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Get Number of CPU Cores
         run: |
@@ -116,7 +117,7 @@ runs:
           TOTAL_RUNNER_EXECUTION_TIME=0    
 
           # MAX_RUN_TIME in milliseconds
-          MAX_RUN_TIME=$(( ${{ total-run-time-in-mins }} * 60 * 1000))
+          MAX_RUN_TIME=$(( ${{ inputs.total-run-time-in-mins }} * 60 * 1000))
           echo "Max Run Time (ms): $MAX_RUN_TIME"
 
           # Read the JSON array
