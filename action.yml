@@ -88,8 +88,7 @@ runs:
           json_array=$(echo "$filtered_list" | jq -R -s 'split("\n") | map(select(length > 0))')
 
           # Debug: Display the JSON array
-          echo "JSON array:"
-          echo "$json_array"
+          echo "::debug title=JSON array::$json_array "
 
           # Save the JSON array to GITHUB_OUTPUT, ensuring proper escaping
           TEST_LIST=$(echo "$json_array" | jq -c)
@@ -133,7 +132,7 @@ runs:
                 if (( (TOTAL_RUNNER_EXECUTION_TIME + time) / HALF_CORES <= MAX_RUN_TIME )); then
                   TOTAL_RUNNER_EXECUTION_TIME=$((TOTAL_RUNNER_EXECUTION_TIME + time))
                   TOTAL_TESTS_IN_A_RUNNER=$((TOTAL_TESTS_IN_A_RUNNER + 1))
-                  echo "Adding test to runner $RUNNER_COUNT: $test (${time}ms)"
+                  echo "::debug::Adding test to runner $RUNNER_COUNT: $test (${time}ms) "
                 else
                   # Current runner is full; Add a new runner for the current test
                   echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $HALF_CORES workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / HALF_CORES))ms"
