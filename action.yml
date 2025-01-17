@@ -1,0 +1,177 @@
+name: 'Playwright finish tests in x minutes'
+author: 'Pramod Yadav'
+description: 'Provide a dynamic playwright matrix for sharding based on desired total run time to finish tests'
+# https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions#branding
+branding:
+  icon: 'fast-forward'
+  color: 'yellow'
+
+
+inputs:
+  total-run-time-in-mins:  
+    description: 'desired-total-test-run-time-in-mins'
+    required: true
+
+  pw-command-to-execute:  
+    description: 'playwright command to run tests'
+    required: true
+
+outputs:
+  dynamic-matrix:
+    description: "dynamic matrix to use"
+    value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
+
+runs:
+  using: "composite"
+  steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+        shell: bash
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Cache Node Modules
+        id: cache-node-modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
+      - name: Install project dependencies
+        run: npm ci
+        shell: bash
+
+      - name: Cache Playwright Browsers
+        id: cache-browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright.config.js', 'package-lock.json') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
+
+      - name: Install Playwright Browsers
+        if: steps.cache-browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+        shell: bash
+      
+      - name: List of Playwright Tests to Run
+        id: list-tests
+        run: |
+          # Run the Playwright test list command
+          test_list=$(${{ pw-command-to-execute }} --list --reporter=list 2>&1 || true)
+
+          # Check if no tests were found
+          if echo "$test_list" | grep -q "Error: No tests found."; then
+            echo "No tests found. Setting RUNNER_COUNT to 1 and exiting gracefully."
+            echo "RUNNER_COUNT=1" >> $GITHUB_ENV
+            echo "RUNNER_COUNT=1" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Debug: Display the raw data
+          echo "RAW test_list:"
+          echo "$test_list"
+
+          # Filter output to include valid test lines starting with '['
+          filtered_list=$(echo "$test_list" | grep -E '^\s*\[' | sed 's/^\s*//; s/\s*$//')
+
+          # Convert the filtered output into a JSON array
+          json_array=$(echo "$filtered_list" | jq -R -s 'split("\n") | map(select(length > 0))')
+
+          # Debug: Display the JSON array
+          echo "JSON array:"
+          echo "$json_array"
+
+          # Save the JSON array to GITHUB_OUTPUT, ensuring proper escaping
+          TEST_LIST=$(echo "$json_array" | jq -c)
+          echo "TEST_LIST=$TEST_LIST" >> $GITHUB_ENV
+          echo "TEST_LIST=$TEST_LIST" >> $GITHUB_OUTPUT
+
+      - name: Get Number of CPU Cores
+        run: |
+          # Determine the number of cores and calculate half the cores
+          NUM_CORES=$(nproc) # For Linux runners
+          HALF_CORES=$((NUM_CORES / 2))
+          echo "Number of cores: $NUM_CORES"
+          echo "Half of cores: $HALF_CORES"
+          echo "HALF_CORES=$HALF_CORES" >> $GITHUB_ENV
+        shell: bash
+      
+      - name: Calculate required runners 
+        run: |
+          echo "Using the test list to calculate runners..."
+
+          # Initialize variables
+          RUNNER_COUNT=1
+          TOTAL_TESTS_IN_A_RUNNER=0    
+          TOTAL_RUNNER_EXECUTION_TIME=0    
+
+          # MAX_RUN_TIME in milliseconds
+          MAX_RUN_TIME=$(( ${{ total-run-time-in-mins }} * 60 * 1000))
+          echo "Max Run Time (ms): $MAX_RUN_TIME"
+
+          # Read the JSON array
+          test_list='${{ steps.list-tests.outputs.TEST_LIST }}'
+
+          # Parse and iterate through the JSON array line by line
+          echo "$test_list" | jq -r '.[]' | {
+            while IFS= read -r test; do
+              # Fetch the execution time for the test from state.json
+              time=$(jq -r --arg test "$test" '.[$test]' state.json)
+
+              if [ "$time" != "null" ]; then
+                # Add the test time to the current runner's total
+                if (( (TOTAL_RUNNER_EXECUTION_TIME + time) / HALF_CORES <= MAX_RUN_TIME )); then
+                  TOTAL_RUNNER_EXECUTION_TIME=$((TOTAL_RUNNER_EXECUTION_TIME + time))
+                  TOTAL_TESTS_IN_A_RUNNER=$((TOTAL_TESTS_IN_A_RUNNER + 1))
+                  echo "Adding test to runner $RUNNER_COUNT: $test (${time}ms)"
+                else
+                  # Current runner is full; Add a new runner for the current test
+                  echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $HALF_CORES workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / HALF_CORES))ms"
+
+                  # Reset variables for the next runner
+                  RUNNER_COUNT=$((RUNNER_COUNT + 1))
+                  TOTAL_TESTS_IN_A_RUNNER=1
+                  TOTAL_RUNNER_EXECUTION_TIME=$time
+                  
+                  echo "Adding another runner $RUNNER_COUNT for test: $test (${time}ms)"
+                fi
+              else
+                echo "::error title=Test Not Found::Test not found in state.json 👉 $test "
+                echo "::notice title=Directory Structure Updated::It seems the test directory structure was updated locally but it was not pushed to state.json."
+                echo "::  title=Pre-commit Hook Suggestion::NOTE: Ideally, this situation can be completely avoided by adding a pre-commit hook to automatically add touched (new/updated) tests to state.json on commit. %0ARefer to the readme of this action, if you want to learn how to do this."                
+                echo "::notice title=Next Steps::For now, you can either 'run missing tests only' or 'all the tests locally' to update the state.json snapshot file and upload it again for reference. Later, implement the pre-commit hook to avoid this situation in the future."
+                exit 1
+              fi
+            done
+
+            echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $HALF_CORES workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / HALF_CORES))ms"
+            echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
+            echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_OUTPUT
+          }
+        shell: bash
+
+      - name: Generate JSON Matrix
+        id: set-matrix
+        run: |
+          MATRIX_JSON="["
+          for i in $(seq 1 $RUNNER_COUNT); do
+            if [ $i -gt 1 ]; then
+              MATRIX_JSON+=","
+            fi
+            MATRIX_JSON+="\"$i\""
+          done
+          MATRIX_JSON+="]"
+
+          echo "Generated matrix: $MATRIX_JSON"
+          echo "dynamic_matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+        shell: bash
