@@ -36,15 +36,6 @@ runs:
         with:
           node-version: 18
 
-      - name: Cache Node Modules
-        id: cache-node-modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
       - name: Install project dependencies
         run: npm ci
         shell: bash
@@ -88,7 +79,8 @@ runs:
           json_array=$(echo "$filtered_list" | jq -R -s 'split("\n") | map(select(length > 0))')
 
           # Debug: Display the JSON array
-          echo "::debug title=JSON array::$json_array "
+          echo "JSON array"
+          echo "$json_array "
 
           # Save the JSON array to GITHUB_OUTPUT, ensuring proper escaping
           TEST_LIST=$(echo "$json_array" | jq -c)
@@ -104,8 +96,8 @@ runs:
           echo "Half of cores: $HALF_CORES"
           echo "HALF_CORES=$HALF_CORES" >> $GITHUB_ENV
         shell: bash
-      
-      - name: Calculate required runners 
+
+      - name: Calculate required runners
         run: |
           echo "Using the test list to calculate runners..."
 
@@ -116,6 +108,7 @@ runs:
 
           # MAX_RUN_TIME in milliseconds
           MAX_RUN_TIME=$(( ${{ inputs.total-run-time-in-mins }} * 60 * 1000))
+          MAX_RUN_TIME=5000
           echo "Max Run Time (ms): $MAX_RUN_TIME"
 
           # Read the JSON array
@@ -126,6 +119,14 @@ runs:
             while IFS= read -r test; do
               # Fetch the execution time for the test from state.json
               time=$(jq -r --arg test "$test" '.[$test]' state.json)
+
+              # Extract the project from the test key
+              project=$(echo "$test" | awk -F'›' '{print $1}' | xargs | sed 's/^\[//;s/\]$//')
+              echo "::notice::Project: $project"
+
+              # Extract the part of the test key to store in JSON (e.g., demo-todo-app.spec.ts:45:7)
+              test_identifier=$(echo "$test" | awk -F'›' '{print $2}' | xargs)
+              echo "::notice::Test Identifier: $test_identifier"
 
               if [ "$time" != "null" ]; then
                 # Add the test time to the current runner's total
@@ -144,6 +145,23 @@ runs:
                   
                   echo "Adding another runner $RUNNER_COUNT for test: $test (${time}ms)"
                 fi
+
+                # Append test to the appropriate runner and project
+                RUNNER_KEY="$RUNNER_COUNT"
+                echo "$RUNNER_KEY"
+                # Initialize the JSON for the runner if not already set
+                if [ -z "${RUNNER_TESTS[$RUNNER_KEY]}" ]; then
+                  RUNNER_TESTS["$RUNNER_KEY"]="{\"$project\": [\"$test_identifier\"]}"
+                else
+                  # Update the project grouping within the runner
+                  if echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq -e ".\"$project\"" > /dev/null; then
+                    # Append to existing project
+                    RUNNER_TESTS["$RUNNER_KEY"]=$(echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq ".\"$project\" += [\"$test_identifier\"]")
+                  else
+                    # Add a new project
+                    RUNNER_TESTS["$RUNNER_KEY"]=$(echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq ". + {\"$project\": [\"$test_identifier\"]}")
+                  fi
+                fi
               else
                 echo "::error title=Test Not Found::Test not found in state.json 👉 $test "
                 echo "::notice title=Directory Structure Updated::It seems the test directory structure was updated locally but it was not pushed to state.json."
@@ -153,6 +171,24 @@ runs:
               fi
             done
 
+            # Debugging: Output the runner keys
+            echo "Keys in RUNNER_TESTS: ${!RUNNER_TESTS[@]}"
+
+            # Build the final JSON structure
+            FINAL_JSON="{"
+            for runner in "${!RUNNER_TESTS[@]}"; do
+              if [[ "$FINAL_JSON" != "{" ]]; then
+                FINAL_JSON+=","
+              fi
+              FINAL_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq -c)"
+            done
+            FINAL_JSON+="}"
+
+            # Pretty-print the JSON using jq
+            echo "Final runners JSON:"
+            echo "$FINAL_JSON" | jq
+            echo "runners_json=$FINAL_JSON" >> $GITHUB_OUTPUT
+            
             echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $HALF_CORES workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / HALF_CORES))ms"
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_OUTPUT
