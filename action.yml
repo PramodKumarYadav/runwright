@@ -20,6 +20,9 @@ outputs:
   dynamic-matrix:
     description: "dynamic matrix to use"
     value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
+  test-load-distribution-json:
+    description: "test load distribution json"
+    value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
 
 runs:
   using: "composite"
@@ -175,19 +178,19 @@ runs:
             echo "Keys in RUNNER_TESTS: ${!RUNNER_TESTS[@]}"
 
             # Build the final JSON structure
-            FINAL_JSON="{"
+            TEST_LOAD_DISTRIBUTION_JSON="{"
             for runner in "${!RUNNER_TESTS[@]}"; do
-              if [[ "$FINAL_JSON" != "{" ]]; then
-                FINAL_JSON+=","
+              if [[ "$TEST_LOAD_DISTRIBUTION_JSON" != "{" ]]; then
+                TEST_LOAD_DISTRIBUTION_JSON+=","
               fi
-              FINAL_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq -c)"
+              TEST_LOAD_DISTRIBUTION_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq -c)"
             done
-            FINAL_JSON+="}"
+            TEST_LOAD_DISTRIBUTION_JSON+="}"
 
             # Pretty-print the JSON using jq
-            echo "Final runners JSON:"
-            echo "$FINAL_JSON" | jq
-            echo "runners_json=$FINAL_JSON" >> $GITHUB_OUTPUT
+            echo "TEST_LOAD_DISTRIBUTION_JSON:"
+            echo "$TEST_LOAD_DISTRIBUTION_JSON" | jq
+            echo "test_load_json=$TEST_LOAD_DISTRIBUTION_JSON" >> $GITHUB_OUTPUT
             
             echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $HALF_CORES workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / HALF_CORES))ms"
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
