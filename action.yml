@@ -101,6 +101,7 @@ runs:
         shell: bash
 
       - name: Calculate required runners
+        id: calculate-required-runners
         run: |
           echo "Using the test list to calculate runners..."
 
