@@ -124,11 +124,11 @@ runs:
 
               # Extract the project from the test key
               project=$(echo "$test" | awk -F'›' '{print $1}' | xargs | sed 's/^\[//;s/\]$//')
-              echo "::notice::Project: $project"
+              echo "::debug::Project: $project"
 
               # Extract the part of the test key to store in JSON (e.g., demo-todo-app.spec.ts:45:7)
               test_identifier=$(echo "$test" | awk -F'›' '{print $2}' | xargs)
-              echo "::notice::Test Identifier: $test_identifier"
+              echo "::debug::Test Identifier: $test_identifier"
 
               if [ "$time" != "null" ]; then
                 # Add the test time to the current runner's total
