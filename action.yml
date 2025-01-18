@@ -111,7 +111,6 @@ runs:
 
           # MAX_RUN_TIME in milliseconds
           MAX_RUN_TIME=$(( ${{ inputs.total-run-time-in-mins }} * 60 * 1000))
-          MAX_RUN_TIME=5000
           echo "Max Run Time (ms): $MAX_RUN_TIME"
 
           # Read the JSON array
