@@ -73,7 +73,7 @@ runs:
 
           # Debug: Display the raw data
           echo "RAW test_list:"
-          echo "$test_list"
+          echo "::debug::test_list: $test_list"
 
           # Filter output to include valid test lines starting with '['
           filtered_list=$(echo "$test_list" | grep -E '^\s*\[' | sed 's/^\s*//; s/\s*$//')
@@ -83,7 +83,7 @@ runs:
 
           # Debug: Display the JSON array
           echo "JSON array"
-          echo "$json_array "
+          echo "::debug::json_array: $json_array"
 
           # Save the JSON array to GITHUB_OUTPUT, ensuring proper escaping
           TEST_LIST=$(echo "$json_array" | jq -c)
@@ -150,7 +150,8 @@ runs:
 
                 # Append test to the appropriate runner and project
                 RUNNER_KEY="$RUNNER_COUNT"
-                echo "$RUNNER_KEY"
+                echo "::debug::RUNNER_KEY: $RUNNER_KEY"
+
                 # Initialize the JSON for the runner if not already set
                 if [ -z "${RUNNER_TESTS[$RUNNER_KEY]}" ]; then
                   RUNNER_TESTS["$RUNNER_KEY"]="{\"$project\": [\"$test_identifier\"]}"
