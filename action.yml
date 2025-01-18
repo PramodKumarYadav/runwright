@@ -184,7 +184,7 @@ runs:
               if [[ "$TEST_LOAD_DISTRIBUTION_JSON" != "{" ]]; then
                 TEST_LOAD_DISTRIBUTION_JSON+=","
               fi
-              TEST_LOAD_DISTRIBUTION_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq)"
+              TEST_LOAD_DISTRIBUTION_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq -c)"
             done
             TEST_LOAD_DISTRIBUTION_JSON+="}"
 
