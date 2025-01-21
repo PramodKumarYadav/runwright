@@ -97,6 +97,8 @@ runs:
           echo "TEST_LIST=$TEST_LIST" >> $GITHUB_OUTPUT
         shell: bash
 
+      # Runner CORES: https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
+      # CORES relationship with nr of workers: https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration?utm_source=chatgpt.com#run-tests-locally
       - name: Get Number of CPU Cores to decide on worker count
         run: |
           # Determine the number of cores and calculate half the cores

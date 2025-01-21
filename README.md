@@ -1,6 +1,24 @@
-# Playwright finish tests in x minutes
+# RunWright
 
-A GitHub action to calculate required runners to finish your tests in x mins. 
+A GitHub action (and solution), to finish your tests in your chosen x minutes, while using minimum number of GitHub runners. 
+
+## Why this action?
+
+This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html) explains the need for this action, in detail. 
+
+## How does this work?
+There are 3 main steps involved. 
+
+### Step1: Create and maintain a test state.json file that keeps [test: run-time] mapping. 
+
+- [Install husky](https://typicode.github.io/husky/get-started.html).
+
+- Add a 
+
+### Step2: Use state.json, desired execution time, number of runner cores to decide how many runners to start. 
+
+### Step3: Run tests using provided "nr or runners", "provided test load per runner" and "recommended-workers" count. 
+
 
 ## Known limitations
 
@@ -13,24 +31,6 @@ A workaround for this would be to increase the expected time and it would hopefu
 - This action assumes that user is running tests with flag `fully parallel = true`. Since it calculates and uses the number of cores of runner machine to decide how many runners are required (both distributed runs on multiple machines and parallel test run on the same machine). The logic to add for `fully parallel = false` is not yet in the action and is yet to be added. 
 
 - Within a framework a user may run certain tests in `serial` or `default` mode, in which case the calculations would be a bit off. 
-
-## Why this action?
-
-Playwright provides an option to run tests on multiple runners using its sharding option as shown [here](https://playwright.dev/docs/test-sharding#github-actions-example). Sharding is a great way to create multiple runners to bring down total execution time. For instance, when a branch is merged to the main branch, post deployment of dev environment, you may want to run all your tests on newly deployed dev environment to see everyhing works as expected.
-
-However, there are also instances when you just want to run a subset of tests, say at a CRON job every hour or so to check if the test environments are up and running. OR we may want to run frontend tests for a particular app if the backend service for that app is newly deployed.
-
-In all these cases, we want to run a very small amount of tests compared to what the max number of runners are optimised for.
-
-To take this with an example, imagine you have 600 tests and you use 6 github runners to run all these tests on a sharded manner. You have hardcoded this matrix as `shardIndex: [1, 2, 3, 4, 5, 6]`, as shown in the example from Playwright above.
-
-Now for one of the above use cases, imagine the CRON job now needs to run only 5 or 6 tests that are tagged as @smoke-test or @health-check. If you use a reusable workflow, you may still be creating 6 runners to run just these 5 or 6 tests even though just one runner would be enough. If this happens frequently, it would result in wasted billable GitHub runner minutes over a period of time for no value in return.
-
-Wouldn't it be nice if based on the ratio of tests to run to the total tests, we could generate a dynamic GitHub matrix on run time? This is exactly the problem this action was created to solve.
-
-> [!NOTE]
->
-> If you want to optimise runners for the use case of changed test files in a pull request, you may want to refer this other action that I created.
 
 ## Inputs
 
