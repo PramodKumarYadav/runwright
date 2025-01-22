@@ -9,30 +9,48 @@ This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html)
 ## How does this work?
 There are 3 main steps involved. 
 
-### Step1: Create and maintain a test state.json file that keeps [test: run-time] mapping. 
+### Step1: Do one time setup. 
 
 - [Install husky](https://typicode.github.io/husky/get-started.html).
 
-- Add a 
+- Add a pre-commit hook as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/pre-commit). 
+  - This will run `--only-changed` tests on local commits. 
 
-### Step2: Use state.json, desired execution time, number of runner cores to decide how many runners to start. 
+- Copy [state-reporter.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
+  - This will create a `state.json` file that contains the mapping of test path and the time it took to run (in ms).
 
-### Step3: Run tests using provided "nr or runners", "provided test load per runner" and "recommended-workers" count. 
+- Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below. 
+`reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
+
+- Add a post-commit as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
+  - This will automatically add state.json file to the branch.
+
+- Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml)that can take inputs from user to run playwright commands and finish tests in x mins. 
+
+- Add a example [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) that shows how to use the reusable workflow to run desired tests.
+
+### Step2: Run tests based on the defined triggers (push to main, pull_request to main, schedule etc all)
+
+- Create an event that triggers the workflow and verify if the tests finish in approx same projected time. 
+
+### Step3: Report found issues.
+
+- If you find any issues, use the issues page to log issues. 
 
 
-## Known limitations
+## Things to rememember
 
-- This action would work best when tests are more or less of same execution time length and they are all run in parallel using `fully parallel = true`. 
+- This action is made to work with playwright option `fully parallel = true`. 
 
-However, if there are some very extremely slow tests, the time taken maybe more than what user desires. This limitation comes from the playwright sharder itself which does not know about how much time each test takes and thus may end up clubbing many slow tests together in the same runner rather than properly land balancing them based on their execution time. 
+- Do not use sharding related commands in the input playwright command to run since this solution is meant to overcome the flaws of sharding. Using sharding again would introduce them again. 
 
-A workaround for this would be to increase the expected time and it would hopefully add more runners and bring down total execution time. 
+- If you are using custom powerful GitHub runners, use the same custom runner type for job that evaluates "RunWright" then what you would use for running tests. 
 
-- This action assumes that user is running tests with flag `fully parallel = true`. Since it calculates and uses the number of cores of runner machine to decide how many runners are required (both distributed runs on multiple machines and parallel test run on the same machine). The logic to add for `fully parallel = false` is not yet in the action and is yet to be added. 
+- The action is not meant to deal with tests run in `serial` or `default` mode and thus can have side effects if your tests are not running fully parallel. This may be addressed in one of future releases. 
 
-- Within a framework a user may run certain tests in `serial` or `default` mode, in which case the calculations would be a bit off. 
+TODO: More documentation to be updated in a day or two. 
 
-## Inputs
+<!-- ## Inputs
 
 ```yaml {"id":"01J2XFHJFST5N0A1651KZ5JCAT"}
 inputs:
@@ -248,4 +266,4 @@ To create and push new tags:
 ```sh {"id":"01J2XFHJFT1K765K3D5J6BDSSC"}
 pramodyadav@Pramods-Laptop playwright-loadbalancer % git tag -a -m "add your message here" v1                   
 pramodyadav@Pramods-Laptop playwright-loadbalancer % git push --follow-tags   
-```
+``` -->
