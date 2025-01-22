@@ -121,13 +121,5 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 ![just a few tests](docs/less-tests-equals-less-runners-and-less-time.png)
 
-<!-- 
-
-### Test result when fifty percent tests to run
-
-![fifty-percent-tests-to-run](docs/2-fifty-percent-tests-to-run.png)
-
-### Test result when all tests to run
-
-![all-tests-are-run](docs/3-all-tests-are-run.png) 
--->
+### Test result when thousands of tests are run and yet desired to be finished in say 2 mins. 
+![finish all tests in predefined time](docs/finish-3k-tests-in-2mins.png)
