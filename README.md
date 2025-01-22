@@ -134,3 +134,7 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 ![finish all 3k tests in predefined time](docs/finish-3k-tests-in-2mins.png)
 
 [all 3k tests finished in approx 2 mins](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=d75b3fb8-0e11-4573-bc00-f575c99db6b9)
+
+## Troubleshooting
+
+- It could be a good idea to generate the \state.json\ file from scratch every few days or weeks to avoid having redundant test path and names.
