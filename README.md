@@ -97,7 +97,7 @@ Follow the instructions in `Getting Started section` that shows how to use this 
 
 - [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
 - [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
-- [run selected tests on demand]
+- [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
 
 ## Reference
 
@@ -121,8 +121,16 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 ![just a few tests](docs/less-tests-equals-less-runners-and-less-time.png)
 
+### Test result for approx (~1.5k) tests in total expected time of 2 mins
+
+![finish all 1.5k tests in 2 mins](docs/finish-1.5k-tests-in-2-mins-jobs.png)
+
+![finish all 1.5K tests in predefined time](docs/finish-1.5k-tests-in-2mins.png)
+
+[all 1.5k tests finished in less than 2 mins](https://www.loom.com/share/c13973941f60401797d840a31e3a6767?sid=c8741b3b-4863-4509-8d0a-43fb7aad8945)
+
 ### Test result for approx (~3k) tests in total expected time of 2 mins
 
-![finish all tests in predefined time](docs/finish-3k-tests-in-2mins.png)
+![finish all 3k tests in predefined time](docs/finish-3k-tests-in-2mins.png)
 
-[all tests finished early](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=d75b3fb8-0e11-4573-bc00-f575c99db6b9)
+[all 3k tests finished in approx 2 mins](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=d75b3fb8-0e11-4573-bc00-f575c99db6b9)
