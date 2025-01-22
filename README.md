@@ -10,7 +10,7 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html) explains the need for this action, in detail. 
 
-## How does this work?
+## Getting Started
 There are 3 main steps involved. 
 
 ### Step1: Do one time setup. 
@@ -52,25 +52,16 @@ There are 3 main steps involved.
 
 - The action is not meant to deal with tests run in `serial` or `default` mode and thus can have side effects if your tests are not running fully parallel. This may be addressed in one of future releases. 
 
-TODO: More documentation to be updated in a day or two. 
-
-<!-- ## Inputs
+## Inputs
 
 ```yaml {"id":"01J2XFHJFST5N0A1651KZ5JCAT"}
 inputs:
-  max-runners:  
-    description: 'maximum number of runners to be used'
+  total-run-time-in-mins:  
+    description: 'desired-total-test-run-time-in-mins'
     required: true
-  
-  # Example (run all projects): npx playwright test --list    
-  pw-cmd-to-list-all-tests:  
-    description: 'playwright command to find total tests'
-    required: false
-    default: 'npx playwright test --list'
-  
-  # Example (run a single project): npx playwright test --project=chromium --grep=@smoke-test --list 
-  pw-cmd-to-list-selected-tests:  
-    description: 'playwright command to run tests in this run'
+
+  pw-command-to-execute:  
+    description: 'playwright command to run tests'
     required: true
 
 ```
@@ -83,169 +74,33 @@ outputs:
     description: "dynamic matrix to use"
     value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
 
+  test-load-distribution-json:
+    description: "test load distribution json"
+    value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
+
+  recommended-workers:  
+    description: 'optimal number of workers to run tests'
+    value: ${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}
+
 ```
 
 ## Example usage
 
-Below is working and tested example of a workflow that uses this action.
-
-```yaml {"id":"01J2NSXS32KV8TSMM4W64D9WMT"}
-# Simple workflow for deploying static content to GitHub Pages
-# Reference: https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site#publishing-with-a-custom-github-actions-workflow
-name: Run Tests on dynamic shards
-
-on:
-  # Runs on pushes targeting the default branch
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-    inputs:
-      pw-cmd-to-run-all-tests:
-        description: "Command to run all tests"
-        required: false
-        default: "npx playwright test"
-        type: string
-
-      pw-cmd-to-run-selected-tests:
-        description: "Command to run selected tests"
-        required: true
-        type: string
-
-# Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
-jobs:
-  generate-matrix:
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:latest
-    outputs:
-      dynamic_matrix: ${{ steps.get-dynamic-matrix.outputs.dynamic-matrix }}
-    steps:
-      - name: Get dynamic matrix
-        uses: PramodKumarYadav/playwright-loadbalancer-based-on-tests-to-run@main
-        id: get-dynamic-matrix
-        with:
-          max-runners: 6
-          pw-cmd-to-list-all-tests: "${{ inputs.pw-cmd-to-run-all-tests }} --list"
-          pw-cmd-to-list-selected-tests: "${{ inputs.pw-cmd-to-run-selected-tests }} --list"
-
-  test:
-    timeout-minutes: 60
-    needs: generate-matrix
-    runs-on: ubuntu-latest
-    environment: dev
-    container:
-      image: mcr.microsoft.com/playwright:v1.47.2-jammy
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: ${{ fromJSON(needs.generate-matrix.outputs.dynamic_matrix) }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Mark Repository as Safe
-        run: git config --global --add safe.directory $GITHUB_WORKSPACE
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install project dependencies
-        run: npm ci
-
-      - name: Run Playwright tests
-        # Index is zero based so add one to get shards index as 1,2,3 and thus ratio as 1/3, 2/3, 3/3.
-        run: NODE_ENV=dev ${{ inputs.pw-cmd-to-run-selected-tests }} --shard=$((${{ strategy.job-index }} + 1))/${{ strategy.job-total }} --reporter=blob
-        env:
-          # HOME: /root
-          HOST: ${{ secrets.HOST}}
-
-      - name: Upload blob report to GitHub Actions Artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: blob-report-${{ matrix.runner }}-${{ strategy.job-index }}
-          path: blob-report
-          retention-days: 1
-
-  merge-reports:
-    # Merge reports after playwright-tests, even if some shards have failed
-    needs: [test]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install project dependencies
-        run: npm ci
-
-      - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-blob-reports
-          pattern: blob-report-*
-          merge-multiple: true
-
-      - name: Merge into HTML Report
-        run: npx playwright merge-reports --reporter html ./all-blob-reports
-
-      - name: Upload HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: html-report--attempt-${{ github.run_attempt }}
-          path: playwright-report
-          retention-days: 14
-
-      - name: Setup and Enable Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact playwright-report
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "playwright-report"
-          retention-days: 30
-
-  # Publish test results job
-  publish-results:
-    # Add a dependency to the test job
-    needs: merge-reports
-    if: always()
-
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    # Specify runner + deployment step
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
+Follow the instructions in `Getting Started section` that shows how to use this action.
 
 ```
 
+## Reference
+
+To create and push new tags (releases) of this action:
+
+```sh {"id":"01J2XFHJFT1K765K3D5J6BDSSC"}
+pramodyadav@Pramods-Laptop runwright % git tag -a -m "add your message here" v1                   
+pramodyadav@Pramods-Laptop runwright % git push --follow-tags   
+
 ## Boundray value Tests
+
+TODO: Add examples that shows if the action can deliver on what it promises, with a low test load and high test load. 
 
 ### Test result when there are no tests to run
 
@@ -262,12 +117,3 @@ jobs:
 ### Test result when all tests to run
 
 ![all-tests-are-run](docs/3-all-tests-are-run.png)
-
-## Reference
-
-To create and push new tags:
-
-```sh {"id":"01J2XFHJFT1K765K3D5J6BDSSC"}
-pramodyadav@Pramods-Laptop playwright-loadbalancer % git tag -a -m "add your message here" v1                   
-pramodyadav@Pramods-Laptop playwright-loadbalancer % git push --follow-tags   
-``` -->

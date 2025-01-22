@@ -6,10 +6,9 @@ branding:
   icon: 'fast-forward'
   color: 'yellow'
 
-
 inputs:
   total-run-time-in-mins:  
-    description: 'desired-total-test-run-time-in-mins'
+    description: 'desired-total-test-run-time-in-mins (minimum 1 min)'
     required: true
 
   pw-command-to-execute:  
