@@ -88,8 +88,6 @@ outputs:
 
 Follow the instructions in `Getting Started section` that shows how to use this action.
 
-```
-
 ## Reference
 
 To create and push new tags (releases) of this action:
@@ -97,6 +95,8 @@ To create and push new tags (releases) of this action:
 ```sh {"id":"01J2XFHJFT1K765K3D5J6BDSSC"}
 pramodyadav@Pramods-Laptop runwright % git tag -a -m "add your message here" v1                   
 pramodyadav@Pramods-Laptop runwright % git push --follow-tags   
+
+```
 
 ## Boundray value Tests
 
