@@ -23,20 +23,20 @@ There are 3 main steps involved.
 `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
 
 - Add a post-commit as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
-  - This will automatically add state.json file to the branch.
+  - This will automatically add `state.json` file to the branch.
 
-- Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml)that can take inputs from user to run playwright commands and finish tests in x mins. 
+- Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml) that can take inputs from user to run playwright commands and finish tests in x mins. 
 
 - Add a example [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) that shows how to use the reusable workflow to run desired tests.
 
 ### Step2: Run tests based on the defined triggers (push to main, pull_request to main, schedule etc all)
 
 - Create an event that triggers the workflow and verify if the tests finish in approx same projected time. 
+ - For now, you can use the [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) you copied above to trigger and run these tests. Fork the repo and push something on your main branch to trigger tests. 
 
 ### Step3: Report found issues.
 
-- If you find any issues, use the issues page to log issues. 
-
+- If you find any issues, use the [issues page](https://github.com/PramodKumarYadav/runwright/issues) to raise them. 
 
 ## Things to rememember
 
