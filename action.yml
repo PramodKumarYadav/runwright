@@ -148,8 +148,12 @@ runs:
                   echo "::debug::Adding test to runner $RUNNER_COUNT: $test (${time}ms) "
                 else
                   # Current runner is full; Add a new runner for the current test
-                  echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))ms"
-
+                  TOTAL_TIME_MS=$((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))
+                  TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
+                  MINUTES=$((TOTAL_TIME_SEC / 60))
+                  SECONDS=$((TOTAL_TIME_SEC % 60))
+                  echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min and ${SECONDS} seconds"
+                  
                   # Reset variables for the next runner
                   RUNNER_COUNT=$((RUNNER_COUNT + 1))
                   TOTAL_TESTS_IN_A_RUNNER=1
@@ -202,7 +206,13 @@ runs:
             echo "$TEST_LOAD_DISTRIBUTION_JSON" | jq
             echo "test_load_json=$TEST_LOAD_DISTRIBUTION_JSON" >> $GITHUB_OUTPUT
             
-            echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: $((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))ms"
+            # Current runner is full; Add a new runner for the current test
+            TOTAL_TIME_MS=$((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))
+            TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
+            MINUTES=$((TOTAL_TIME_SEC / 60))
+            SECONDS=$((TOTAL_TIME_SEC % 60))
+            echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min and ${SECONDS} seconds"
+            
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_OUTPUT
           }
