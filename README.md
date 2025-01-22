@@ -123,3 +123,6 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 ### Test result when thousands of tests are run and yet desired to be finished in say 2 mins. 
 ![finish all tests in predefined time](docs/finish-3k-tests-in-2mins.png)
+
+[all tests finished early](https://www.loom.com/share/28924b04c5a14ebe9cc40dff7f76a2d2?sid=eda3a9ea-7805-40a8-8c92-8fcb38baca23)
+
