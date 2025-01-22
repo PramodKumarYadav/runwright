@@ -123,4 +123,4 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 ![finish all tests in predefined time](docs/finish-3k-tests-in-2mins.png)
 
-[all tests finished early](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=aa23e71d-da39-45b8-a40b-e41f84691d8f)
+[all tests finished early](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=d75b3fb8-0e11-4573-bc00-f575c99db6b9)
