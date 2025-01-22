@@ -102,6 +102,7 @@ pramodyadav@Pramods-Laptop runwright % git push --follow-tags
 
 TODO: Add examples that shows if the action can deliver on what it promises, with a low test load and high test load. 
 
+<!-- 
 ### Test result when there are no tests to run
 
 ![zero-tests-to-run](docs/0-zero-tests-to-run.png)
@@ -116,4 +117,5 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 ### Test result when all tests to run
 
-![all-tests-are-run](docs/3-all-tests-are-run.png)
+![all-tests-are-run](docs/3-all-tests-are-run.png) 
+-->
