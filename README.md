@@ -20,12 +20,14 @@ This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html)
 
 There are 3 main steps involved:
 
-### Step1: One time setup
+### Step1: One time setup (in your test project)
 
-- [Install husky](https://typicode.github.io/husky/get-started.html).
+- [Install latest version of Node (or at least >=18)](https://nodejs.org/en)
 
-- Add a pre-commit hook as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/pre-commit). 
-  - This will run `--only-changed` tests on local commits. 
+- [Install husky in your test project](https://typicode.github.io/husky/get-started.html).
+
+- Add a `pre-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/pre-commit).
+  - This will run `--only-changed` tests on local commits.
 
 - Copy [state-reporter.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
   - This will create a `state.json` file that contains the mapping of test path and the time it took to run (in ms).
@@ -33,7 +35,7 @@ There are 3 main steps involved:
 - Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below. 
 `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
 
-- Add a post-commit as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
+- Add a `post-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
   - This will automatically add `state.json` file to the branch.
 
 - Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml) that can take inputs from user to run playwright commands and finish tests in x mins.
