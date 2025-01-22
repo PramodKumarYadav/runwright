@@ -16,8 +16,6 @@ inputs:
     description: 'playwright command to run tests'
     required: true
   
-  
-
 outputs:
   dynamic-matrix:
     description: "dynamic matrix to use"
@@ -27,9 +25,9 @@ outputs:
     description: "test load distribution json"
     value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
 
-  optimal-worker-count:  
+  recommended-workers:  
     description: 'optimal number of workers to run tests'
-    required: true
+    value: ${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}
 
 runs:
   using: "composite"
@@ -100,6 +98,7 @@ runs:
       # Runner CORES: https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
       # CORES relationship with nr of workers: https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration?utm_source=chatgpt.com#run-tests-locally
       - name: Get Number of CPU Cores to decide on worker count
+        id: get-number-of-cpu-cores-to-decide-on-worker-count
         run: |
           # Determine the number of cores and calculate half the cores
           NUM_CORES=$(nproc) # For Linux runners
@@ -107,6 +106,7 @@ runs:
           echo "Number of cores: $NUM_CORES"
           echo "Half of cores (optimal worker count): $RECOMMENDED_WORKERS"
           echo "RECOMMENDED_WORKERS=$RECOMMENDED_WORKERS" >> $GITHUB_ENV
+          echo "RECOMMENDED_WORKERS=$RECOMMENDED_WORKERS" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Calculate required runners
