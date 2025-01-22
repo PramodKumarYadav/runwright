@@ -2,6 +2,8 @@
 
 The one-and-only**, GitHub action (and solution), that allows you to finish your PlayWright tests in your chosen x minutes, while using optimal minimum number of GitHub runners. 
 
+![fast test run](docs/3k-tests-in-90-seconds.png)
+
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this. 
 
 ## Why this action?
