@@ -1,6 +1,8 @@
 # RunWright
 
-A GitHub action (and solution), to finish your tests in your chosen x minutes, while using minimum number of GitHub runners. 
+The one-and-only**, GitHub action (and solution), that allows you to finish your PlayWright tests in your chosen x minutes, while using optimal minimum number of GitHub runners. 
+
+** At the time of writing, there are no known other solutions (paid or open source), that can do this. 
 
 ## Why this action?
 
