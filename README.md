@@ -32,7 +32,7 @@ There are 3 main steps involved:
 - Copy [state-reporter.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
   - This will create a `state.json` file that contains the mapping of test path and the time it took to run (in ms).
 
-- Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below. 
+- Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below.
 `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
 
 - Add a `post-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
@@ -111,7 +111,7 @@ pramodyadav@Pramods-Laptop runwright % git push --follow-tags
 
 ## Boundary value Tests
 
-TODO: Add examples that shows if the action can deliver on what it promises, with a low test load and high test load. 
+TODO: Add examples that shows if the action can deliver on what it promises, with a low test load and high test load.
 
 ### Test result when there are no tests to run
 
@@ -121,7 +121,7 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 ![just a few tests](docs/less-tests-equals-less-runners-and-less-time.png)
 
-### Test result when thousands of tests are run and yet desired to be finished in say 2 mins
+### Test result for approx (~3k) tests in total expected time of 2 mins
 
 ![finish all tests in predefined time](docs/finish-3k-tests-in-2mins.png)
 
