@@ -6,6 +6,15 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this. 
 
+## 🚀 features
+
+- Dynamically add workers based on the cores of remote GitHub runners. More cores = more parallel execution (where [workers = cores/2]).
+
+- Does dynamic runner scaling based on the test load in the workflow.
+
+- Have examples of how to run only new/updated tests, say on a pull request to running all tests on a push to main. 
+
+
 ## Why this action?
 
 This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html) explains the need for this action, in detail. 
@@ -102,14 +111,17 @@ pramodyadav@Pramods-Laptop runwright % git push --follow-tags
 
 TODO: Add examples that shows if the action can deliver on what it promises, with a low test load and high test load. 
 
-<!-- 
+
 ### Test result when there are no tests to run
 
 ![zero-tests-to-run](docs/0-zero-tests-to-run.png)
 
+
 ### Test result when there are very few tests to run
 
-![seven-percent-tests-to-run](docs/1-seven-percent-tests-to-run.png)
+![just a few tests](docs/less-tests-equals-less-runners-and-less-time.png)
+
+<!-- 
 
 ### Test result when fifty percent tests to run
 
