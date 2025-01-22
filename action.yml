@@ -152,7 +152,7 @@ runs:
                   TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
                   MINUTES=$((TOTAL_TIME_SEC / 60))
                   SECONDS=$((TOTAL_TIME_SEC % 60))
-                  echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min and ${SECONDS} seconds"
+                  echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min(s) and ${SECONDS} seconds"
                   
                   # Reset variables for the next runner
                   RUNNER_COUNT=$((RUNNER_COUNT + 1))
@@ -211,7 +211,7 @@ runs:
             TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
             MINUTES=$((TOTAL_TIME_SEC / 60))
             SECONDS=$((TOTAL_TIME_SEC % 60))
-            echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min and ${SECONDS} seconds"
+            echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min(s) and ${SECONDS} seconds"
             
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
             echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_OUTPUT
