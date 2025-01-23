@@ -6,11 +6,32 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
-## 🚀 features
+## 🚀 Core features
 
-- **Parallel Run**: Dynamically overwrite workers in CI, based on the cores of remote GitHub runners (More cores = more parallel execution, where [workers = cores/2]). If you create a custom 64GB runner, it will have 10 cores and it will automatically run tests on 5 workers (half of cores).
+- **🚀 Faster than Playwright Sharding**: ✅
+  - **Smart load balancing based on execution time and not just test count**: We create "bundle of tests and runners" based on:
+    - The time each test takes. 
+    - The total exepected time for run provided by user. 
+    - The cores availablity of runners. 
 
-- **Distributed Run**: Dynamically does runner scaling based on the test load and time each test takes in a workflow (less tests = less runners. More tess = more runners).
+    This makes make our total run time predictable and fast.
+  - **Distributed Run**: The number of bundles translates to number of runners.
+  - **Parallel Run**: The number of cores translates to number of workers (where workers = cores/2).
+
+- **↗️↘️ Dynamic sharding over Playwrights hard coded Sharding**: ✅
+  - Although this is not directly a Playwright sharder shortcoming but since not everyone is an expert with GitHub actions and the [playwright sharding github example](https://playwright.dev/docs/test-sharding#github-actions-example)
+  hard codes the number of shards in the workflow file, most teams end up using the example as-is in their projects and thus results into a inefficient hard coded runner strategy.  
+
+  Teams often increase runners to finish tests faster but when they do maintenance or add a few new tests, they end up spinning all those runners, resulting into waste and under utilisation of runners. 
+
+- **💸 Cheaper than Playwright Sharding**: ✅
+  - Since we dynamically scale runners up and down to always create only the bare minimum runners required to do the job, we avoid waste in terms of CI minutes. 
+  For comparision, with playwright sharding teams end up hard coding more runners to bring down execution time and as a side affect increase cost to the company.
+
+- **🌿 Greener than Playwright Sharding**: ✅
+  - Since we always only create the exact amount of runnres we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
+  this is also a very efficient and thus greener alternative to Playwright Sharding. 
+
 
 ## Why this action?
 
@@ -139,7 +160,7 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 
 - It could be a good idea to generate the \state.json\ file from scratch every few days or weeks to avoid having redundant test path and names.
 
-## 🫶 Loved this action? Want to show some love and support?
+## 🫶 Want to show some love and support for this action?
 
 ![coffee](docs/coffee.png) 
 
