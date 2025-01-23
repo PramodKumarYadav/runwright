@@ -6,6 +6,10 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this. 
 
+## 🫶 Love this solution and want to support?
+
+![coffee](docs/coffee.png) https://buymeacoffee.com/power.tester
+
 ## 🚀 features
 
 - Dynamically add workers based on the cores of remote GitHub runners. More cores = more parallel execution (where [workers = cores/2]).
