@@ -29,7 +29,7 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
   For comparision, with playwright sharding teams end up hard coding more runners to bring down execution time and as a side affect increase cost to the company.
 
 - **🌿 Greener than Playwright Sharding**: ✅
-  - Since we always only create the exact amount of runnres we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
+  - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
   this is also a very efficient and thus greener alternative to Playwright Sharding. 
 
 
