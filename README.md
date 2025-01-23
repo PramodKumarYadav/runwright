@@ -51,13 +51,13 @@ There are 3 main steps involved:
   - This will run `--only-changed` tests on local commits.
 
 - Copy [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
-  - This will create a `state.json` file that contains the mapping of test path and the time it took to run (in ms).
+  - This will create a `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file that contains the mapping of test path and the time it took to run (in ms).
 
 - Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below.
 `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
 
 - Add a `post-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
-  - This will automatically add `state.json` file to the branch.
+  - This will automatically add `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file to the branch.
 
 - Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml) that can take inputs from user to run playwright commands and finish tests in x mins.
 
@@ -158,7 +158,7 @@ Below are some tests to verify for some edge case scenarios and validate that th
 
 ## Troubleshooting
 
-- It could be a good idea to generate the \state.json\ file from scratch every few days or weeks to avoid having redundant test path and names.
+- It could be a good idea to generate the `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file from scratch every few days or weeks to avoid having redundant test path and names.
 
 ## 🫶 Want to show some love and support for this action?
 
