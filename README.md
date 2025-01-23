@@ -132,7 +132,7 @@ pramodyadav@Pramods-Laptop runwright % git push --follow-tags
 
 ## Boundary value Tests
 
-TODO: Add examples that shows if the action can deliver on what it promises, with a low test load and high test load.
+Below are some tests to verify for some edge case scenarios and validate that the action works as expected. 
 
 ### Test result when there are no tests to run
 
