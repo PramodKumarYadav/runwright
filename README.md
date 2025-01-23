@@ -6,10 +6,6 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
-## 🫶 Love this solution and want to support?
-
-![coffee](docs/coffee.png) https://buymeacoffee.com/power.tester
-
 ## 🚀 features
 
 - **Parallel Run**: Dynamically overwrite workers in CI, based on the cores of remote GitHub runners (More cores = more parallel execution, where [workers = cores/2]). If you create a custom 64GB runner, it will have 10 cores and it will automatically run tests on 5 workers (half of cores).
@@ -142,3 +138,9 @@ TODO: Add examples that shows if the action can deliver on what it promises, wit
 ## Troubleshooting
 
 - It could be a good idea to generate the \state.json\ file from scratch every few days or weeks to avoid having redundant test path and names.
+
+## 🫶 Loved this action? Want to show some love and support?
+
+![coffee](docs/coffee.png) 
+
+https://buymeacoffee.com/power.tester
