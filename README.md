@@ -52,14 +52,6 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
   - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
   this is also a very efficient and thus greener alternative to Playwright Sharding. 
 
-## Love this action? Want to support?
-
-![coffee](docs/coffee.png) 
-
-https://buymeacoffee.com/power.tester
-
-[![Sponsor PramodKumarYadav](https://img.shields.io/badge/🤍%20Sponsor%20Me-%23EA4AAA.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/PramodKumarYadav)
-
 ## Why this action?
 
 This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html) explains, in detail, the need for this action and the problem it solves.
@@ -186,3 +178,11 @@ Below are some tests to verify for some edge case scenarios and validate that th
 ## Troubleshooting
 
 - It could be a good idea to generate the `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file from scratch every few days or weeks to avoid having redundant test path and names.
+
+## Love this action? Want to support?
+
+![coffee](docs/coffee.png) 
+
+https://buymeacoffee.com/power.tester
+
+[![Sponsor PramodKumarYadav](https://img.shields.io/badge/🤍%20Sponsor%20Me-%23EA4AAA.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/PramodKumarYadav)
