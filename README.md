@@ -52,11 +52,13 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
   - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
   this is also a very efficient and thus greener alternative to Playwright Sharding. 
 
-## Love this action and want to support?
+## Love this action? Want to support?
 
 ![coffee](docs/coffee.png) 
 
 https://buymeacoffee.com/power.tester
+
+[![Sponsor PramodKumarYadav](https://img.shields.io/badge/🤍%20Sponsor%20Me-%23EA4AAA.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/PramodKumarYadav)
 
 ## Why this action?
 
