@@ -6,6 +6,26 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
+## Without RunWright
+
+## Uneven run time on each runner
+
+![uneven-run-time](docs/uneven-run-time.png)
+
+## Fixed runners that does not scale up or down based on test load
+
+![fixed-runners](docs/fixed-runners.png)
+
+## With RunWright
+
+## Even test load distribution based on desired run time to finish tests.
+
+![even-load-distribution](docs/even-load-distribution.png)
+
+## Dynamic runners that scale up or down based on test load
+
+![dynamic-scaling-of-runners](docs/dynamic-scaling-of-runners.png)
+
 ## 🚀 Core features
 
 - **🚀 Faster than Playwright Sharding**: ✅
@@ -32,6 +52,11 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
   - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
   this is also a very efficient and thus greener alternative to Playwright Sharding. 
 
+## Love this action and want to support?
+
+![coffee](docs/coffee.png) 
+
+https://buymeacoffee.com/power.tester
 
 ## Why this action?
 
@@ -159,9 +184,3 @@ Below are some tests to verify for some edge case scenarios and validate that th
 ## Troubleshooting
 
 - It could be a good idea to generate the `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file from scratch every few days or weeks to avoid having redundant test path and names.
-
-## 🫶 Want to show some love and support for this action?
-
-![coffee](docs/coffee.png) 
-
-https://buymeacoffee.com/power.tester
