@@ -133,7 +133,7 @@ outputs:
 
 ## Example usage
 
-Follow the instructions in `Getting Started section` that shows how to use this action. Other than that, below are some common examples:
+Follow the instructions in  [Getting Started](#getting-started)  section that shows how to use this action. Other than that, below are some common examples:
 
 - [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
 - [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
@@ -179,10 +179,12 @@ Below are some tests to verify for some edge case scenarios and validate that th
 
 - It could be a good idea to generate the `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file from scratch every few days or weeks to avoid having redundant test path and names.
 
-## Love this action? Want to support?
+## Like my work and want to support or sponsor?
 
-![coffee](docs/coffee.png) 
+<a href="https://buymeacoffee.com/power.tester" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px; width: 217px; border-radius: 8px; margin-bottom: 15px;">
+</a>
 
-https://buymeacoffee.com/power.tester
-
-[![Sponsor PramodKumarYadav](https://img.shields.io/badge/🤍%20Sponsor%20Me-%23EA4AAA.svg?style=for-the-badge&logo=github)](https://github.com/sponsors/PramodKumarYadav)
+<a href="https://github.com/sponsors/PramodKumarYadav" target="_blank">
+  <img src="https://img.shields.io/badge/Sponsor%20Me%20on%20GitHub-%E2%9D%A4-6f42c1?style=for-the-badge&logo=github-sponsors" alt="Sponsor Me on GitHub" style="height: 60px; width: 217px; border-radius: 8px;">
+</a>
