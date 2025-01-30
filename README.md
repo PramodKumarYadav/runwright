@@ -54,7 +54,7 @@ The one-and-only known GitHub action (and solution), that allows you to finish y
 
 ## Why this action?
 
-This [article](https://pramodkumaryadav.github.io/power-tester/blogs/blog2.html) explains, in detail, the need for this action and the problem it solves.
+This [article](https://pramodkumaryadav.github.io/power-tester/blogs/finish-fast-in-2-mins.html) explains, in detail, the need for this action and the problem it solves.
 
 ## Getting Started
 
