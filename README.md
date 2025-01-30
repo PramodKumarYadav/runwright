@@ -188,3 +188,11 @@ Below are some tests to verify for some edge case scenarios and validate that th
 <a href="https://github.com/sponsors/PramodKumarYadav" target="_blank">
   <img src="https://img.shields.io/badge/Sponsor%20Me%20on%20GitHub-%E2%9D%A4-6f42c1?style=for-the-badge&logo=github-sponsors" alt="Sponsor Me on GitHub" style="height: 60px; width: 217px; border-radius: 8px;">
 </a>
+
+## Whats next?
+
+- [ ] Add option to deal with `fullyParallel=false`. This should cover the below scenarios:
+  - When `fullyParallel=false`.
+  - When `fullyParallel=true` but there are test files that contains `test.describe.configure({ mode: 'serial' });` or `test.describe.configure({ mode: 'default' });`
+
+- [ ] Add option for when a user doesn't want to limit by time but want to limit the maximum runners to use.
