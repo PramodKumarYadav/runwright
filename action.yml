@@ -23,7 +23,7 @@ inputs:
   fully-parallel:
     description: "Whether Playwright is configured with fullyParallel=true (default: true). Set to false if fullyParallel=false in playwright.config"
     required: false
-    default: 'true'
+    default: true
 
 # ==========================================
 # OUTPUTS
