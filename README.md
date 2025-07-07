@@ -6,7 +6,7 @@ The only known GitHub action (and solution), that allows you to finish your Play
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
-> [!INFO]
+> [!NOTE]
 > **Scope**: This action covers both execution modes:
 >    
 > - When `fullyParallel=true`. [ Run all individual tests in parallel on runners]
