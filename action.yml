@@ -15,7 +15,7 @@ inputs:
   total-run-time-in-mins:
     description: "Desired total test run time in minutes (minimum 1 min)"
     required: true
-    type: integer
+    type: number
 
   pw-command-to-execute:
     description: 'Playwright command to run tests (e.g., "npx playwright test")'
@@ -97,10 +97,10 @@ runs:
       id: detect-playwright-config
       run: |
         echo "🔍 Detecting Playwright configuration..."
-        
+
         FULLY_PARALLEL="${{ inputs.fully-parallel }}"
         echo "📝 Parallelism Mode: $FULLY_PARALLEL"
-        
+
         if [ "$FULLY_PARALLEL" = "true" ]; then
           echo "✅ Running in fully parallel mode - individual test distribution"
           echo "DISTRIBUTION_MODE=individual" >> $GITHUB_ENV
@@ -110,7 +110,7 @@ runs:
           echo "DISTRIBUTION_MODE=file-level" >> $GITHUB_ENV
           echo "DISTRIBUTION_MODE=file-level" >> $GITHUB_OUTPUT
         fi
-        
+
         echo "FULLY_PARALLEL=$FULLY_PARALLEL" >> $GITHUB_ENV
       shell: bash
 
@@ -172,12 +172,12 @@ runs:
 
         # Calculate optimal worker count (half of available cores for stability)
         RECOMMENDED_WORKERS=$((NUM_CORES / 2))
-        
+
         # Ensure minimum of 1 worker
         if [ $RECOMMENDED_WORKERS -lt 1 ]; then
           RECOMMENDED_WORKERS=1
         fi
-        
+
         # Display mode-specific information
         if [ "$FULLY_PARALLEL" = "true" ]; then
           echo "✅ Fully parallel mode: Individual tests run in parallel"
