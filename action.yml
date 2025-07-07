@@ -15,7 +15,7 @@ inputs:
   total-run-time-in-mins:
     description: "Desired total test run time in minutes (minimum 1 min)"
     required: true
-    type: number
+    type: string
 
   pw-command-to-execute:
     description: 'Playwright command to run tests (e.g., "npx playwright test")'
