@@ -380,10 +380,18 @@ runs:
                 # Update existing entry
                 current_time=$(grep "^$file_key " "$temp_file_times" | cut -d' ' -f2)
                 new_time=$((current_time + time))
-                sed -i "s/^$file_key $current_time/$file_key $new_time/" "$temp_file_times"
                 
-                # Append to test list
-                sed -i "s/^$file_key /&$test_identifier|/" "$temp_file_tests"
+                # Use awk to safely replace the line (avoids sed delimiter issues)
+                awk -v key="$file_key" -v old_time="$current_time" -v new_time="$new_time" '
+                  $0 ~ "^" key " " old_time "$" { gsub(old_time "$", new_time); print; next }
+                  { print }
+                ' "$temp_file_times" > "${temp_file_times}.tmp" && mv "${temp_file_times}.tmp" "$temp_file_times"
+                
+                # Safely append to test list using awk
+                awk -v key="$file_key" -v test="$test_identifier" '
+                  $0 ~ "^" key " " { print $0 "|" test; next }
+                  { print }
+                ' "$temp_file_tests" > "${temp_file_tests}.tmp" && mv "${temp_file_tests}.tmp" "$temp_file_tests"
               else
                 # Add new entry
                 echo "$file_key $time" >> "$temp_file_times"
