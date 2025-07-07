@@ -1,234 +1,324 @@
-name: 'RunWright'
-author: 'Pramod Yadav'
-description: 'A action to run playwright tests optimally and within time limits'
+name: "RunWright"
+author: "Pramod Yadav"
+description: "A GitHub Action to run Playwright tests optimally and within time limits"
+
+# GitHub Actions branding configuration
 # https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions#branding
 branding:
-  icon: 'fast-forward'
-  color: 'yellow'
+  icon: "fast-forward"
+  color: "yellow"
 
+# ==========================================
+# INPUTS
+# ==========================================
 inputs:
-  total-run-time-in-mins:  
-    description: 'desired-total-test-run-time-in-mins (minimum 1 min)'
+  total-run-time-in-mins:
+    description: "Desired total test run time in minutes (minimum 1 min)"
     required: true
 
-  pw-command-to-execute:  
-    description: 'playwright command to run tests'
+  pw-command-to-execute:
+    description: 'Playwright command to run tests (e.g., "npx playwright test")'
     required: true
-  
+
+# ==========================================
+# OUTPUTS
+# ==========================================
 outputs:
   dynamic-matrix:
-    description: "dynamic matrix to use"
+    description: "Dynamic matrix array for parallel runner strategy"
     value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
 
   test-load-distribution-json:
-    description: "test load distribution json"
+    description: "JSON object containing test distribution across runners"
     value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
 
-  recommended-workers:  
-    description: 'optimal number of workers to run tests'
+  recommended-workers:
+    description: "Optimal number of workers per runner based on CPU cores"
     value: ${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}
 
+# ==========================================
+# COMPOSITE ACTION STEPS
+# ==========================================
 runs:
   using: "composite"
   steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    # ------------------------------------------
+    # SETUP PHASE: Environment preparation
+    # ------------------------------------------
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-        shell: bash
+    - name: Install jq (JSON processor)
+      run: sudo apt-get update && sudo apt-get install -y jq
+      shell: bash
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
 
-      - name: Install project dependencies
-        run: npm ci
-        shell: bash
+    - name: Install project dependencies
+      run: npm ci
+      shell: bash
 
-      - name: Cache Playwright Browsers
-        id: cache-browsers
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright.config.js', 'package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
+    # ------------------------------------------
+    # BROWSER CACHING: Optimize Playwright setup
+    # ------------------------------------------
+    - name: Cache Playwright Browsers
+      id: cache-browsers
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-browsers-${{ runner.os }}-${{ hashFiles('playwright.config.js', 'package-lock.json') }}
+        restore-keys: |
+          playwright-browsers-${{ runner.os }}-
 
-      - name: Install Playwright Browsers
-        if: steps.cache-browsers.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
-        shell: bash
-      
-      - name: List of Playwright Tests to Run
-        id: list-tests
-        run: |
-          # Run the Playwright test list command
-          test_list=$(${{ inputs.pw-command-to-execute }} --list --reporter=list 2>&1 || true)
+    - name: Install Playwright Browsers
+      if: steps.cache-browsers.outputs.cache-hit != 'true'
+      run: npx playwright install --with-deps
+      shell: bash
 
-          # Check if no tests were found
-          if echo "$test_list" | grep -q "Error: No tests found."; then
-            echo "No tests found. Setting RUNNER_COUNT to 1 and exiting gracefully."
-            echo "RUNNER_COUNT=1" >> $GITHUB_ENV
-            echo "RUNNER_COUNT=1" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+    # ------------------------------------------
+    # TEST DISCOVERY: Discover and process tests
+    # ------------------------------------------
+    - name: List of Playwright Tests to Run
+      id: list-tests
+      run: |
+        echo "🔍 Discovering Playwright tests..."
 
-          # Debug: Display the raw data
-          echo "RAW test_list:"
-          echo "::debug::test_list: $test_list"
+        # Execute Playwright test list command
+        test_list=$(${{ inputs.pw-command-to-execute }} --list --reporter=list 2>&1 || true)
 
-          # Filter output to include valid test lines starting with '['
-          filtered_list=$(echo "$test_list" | grep -E '^\s*\[' | sed 's/^\s*//; s/\s*$//')
+        # Handle case when no tests are found
+        if echo "$test_list" | grep -q "Error: No tests found."; then
+          echo "⚠️  No tests found. Setting RUNNER_COUNT to 1 and exiting gracefully."
+          echo "RUNNER_COUNT=1" >> $GITHUB_ENV
+          echo "RUNNER_COUNT=1" >> $GITHUB_OUTPUT
+          exit 0
+        fi
 
-          # Convert the filtered output into a JSON array
-          json_array=$(echo "$filtered_list" | jq -R -s 'split("\n") | map(select(length > 0))')
+        # Debug: Display the raw output
+        echo "📋 RAW test_list:"
+        echo "::debug::test_list: $test_list"
 
-          # Debug: Display the JSON array
-          echo "JSON array"
-          echo "::debug::json_array: $json_array"
+        # Filter output to include only valid test lines (starting with '[')
+        echo "🔧 Filtering test list..."
+        filtered_list=$(echo "$test_list" | grep -E '^\s*\[' | sed 's/^\s*//; s/\s*$//')
 
-          # Save the JSON array to GITHUB_OUTPUT, ensuring proper escaping
-          TEST_LIST=$(echo "$json_array" | jq -c)
-          echo "TEST_LIST=$TEST_LIST" >> $GITHUB_OUTPUT
-        shell: bash
+        # Convert filtered output into a JSON array
+        echo "📦 Converting to JSON array..."
+        json_array=$(echo "$filtered_list" | jq -R -s 'split("\n") | map(select(length > 0))')
 
-      # Runner CORES: https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
-      # CORES relationship with nr of workers: https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration?utm_source=chatgpt.com#run-tests-locally
-      - name: Get Number of CPU Cores to decide on worker count
-        id: get-number-of-cpu-cores-to-decide-on-worker-count
-        run: |
-          # Determine the number of cores and calculate half the cores
-          NUM_CORES=$(nproc) # For Linux runners
-          RECOMMENDED_WORKERS=$((NUM_CORES / 2))
-          echo "Number of cores: $NUM_CORES"
-          echo "Half of cores (optimal worker count): $RECOMMENDED_WORKERS"
-          echo "RECOMMENDED_WORKERS=$RECOMMENDED_WORKERS" >> $GITHUB_ENV
-          echo "RECOMMENDED_WORKERS=$RECOMMENDED_WORKERS" >> $GITHUB_OUTPUT
-        shell: bash
+        # Debug: Display the JSON array
+        echo "✅ JSON array created:"
+        echo "::debug::json_array: $json_array"
 
-      - name: Calculate required runners
-        id: calculate-required-runners
-        run: |
-          echo "Using the test list to calculate runners..."
+        # Save the JSON array to GITHUB_OUTPUT (compact format for transfer)
+        TEST_LIST=$(echo "$json_array" | jq -c)
+        echo "TEST_LIST=$TEST_LIST" >> $GITHUB_OUTPUT
 
-          # Initialize variables
-          RUNNER_COUNT=1
-          TOTAL_TESTS_IN_A_RUNNER=0    
-          TOTAL_RUNNER_EXECUTION_TIME=0    
+        echo "✅ Test discovery completed. Found $(echo "$json_array" | jq 'length') tests."
+      shell: bash
 
-          # MAX_RUN_TIME in milliseconds
-          MAX_RUN_TIME=$(( ${{ inputs.total-run-time-in-mins }} * 60 * 1000))
-          echo "Max Run Time (ms): $MAX_RUN_TIME"
+    # ------------------------------------------
+    # RESOURCE OPTIMIZATION: Calculate optimal worker count
+    # ------------------------------------------
+    # References:
+    # - Runner CORES: https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
+    # - CORES vs Workers: https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration#run-tests-locally
+    - name: Calculate Optimal Worker Count
+      id: get-number-of-cpu-cores-to-decide-on-worker-count
+      run: |
+        echo "🖥️  Calculating optimal worker count based on CPU cores..."
 
-          # Read the JSON array
-          test_list='${{ steps.list-tests.outputs.TEST_LIST }}'
+        # Get number of CPU cores available on the runner
+        NUM_CORES=$(nproc)  # For Linux runners
 
-          # Parse and iterate through the JSON array line by line
-          echo "$test_list" | jq -r '.[]' | {
-            while IFS= read -r test; do
-              # Fetch the execution time for the test from state.json
-              time=$(jq -r --arg test "$test" '.[$test]' state.json)
+        # Calculate optimal worker count (half of available cores for stability)
+        RECOMMENDED_WORKERS=$((NUM_CORES / 2))
 
-              # Extract the project from the test key
-              project=$(echo "$test" | awk -F'›' '{print $1}' | xargs | sed 's/^\[//;s/\]$//')
-              echo "::debug::Project: $project"
+        echo "📊 System Information:"
+        echo "   CPU Cores: $NUM_CORES"
+        echo "   Recommended Workers: $RECOMMENDED_WORKERS"
 
-              # Extract the part of the test key to store in JSON (e.g., demo-todo-app.spec.ts:45:7)
-              test_identifier=$(echo "$test" | awk -F'›' '{print $2}' | xargs)
-              echo "::debug::Test Identifier: $test_identifier"
+        # Export variables for use in subsequent steps
+        echo "RECOMMENDED_WORKERS=$RECOMMENDED_WORKERS" >> $GITHUB_ENV
+        echo "RECOMMENDED_WORKERS=$RECOMMENDED_WORKERS" >> $GITHUB_OUTPUT
+      shell: bash
 
-              if [ "$time" != "null" ]; then
-                # Add the test time to the current runner's total
-                if (( (TOTAL_RUNNER_EXECUTION_TIME + time) / RECOMMENDED_WORKERS <= MAX_RUN_TIME )); then
-                  TOTAL_RUNNER_EXECUTION_TIME=$((TOTAL_RUNNER_EXECUTION_TIME + time))
-                  TOTAL_TESTS_IN_A_RUNNER=$((TOTAL_TESTS_IN_A_RUNNER + 1))
-                  echo "::debug::Adding test to runner $RUNNER_COUNT: $test (${time}ms) "
-                else
-                  # Current runner is full; Add a new runner for the current test
-                  TOTAL_TIME_MS=$((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))
-                  TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
-                  MINUTES=$((TOTAL_TIME_SEC / 60))
-                  SECONDS=$((TOTAL_TIME_SEC % 60))
-                  echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min(s) and ${SECONDS} seconds"
-                  
-                  # Reset variables for the next runner
-                  RUNNER_COUNT=$((RUNNER_COUNT + 1))
-                  TOTAL_TESTS_IN_A_RUNNER=1
-                  TOTAL_RUNNER_EXECUTION_TIME=$time
-                  
-                  echo "Adding another runner $RUNNER_COUNT for test: $test (${time}ms)"
-                fi
+    # ------------------------------------------
+    # CORE ALGORITHM: Dynamic test distribution across runners
+    # ------------------------------------------
+    - name: Calculate Required Runners and Distribute Tests
+      id: calculate-required-runners
+      run: |
+        echo "🧮 Starting dynamic test distribution algorithm..."
 
-                # Append test to the appropriate runner and project
-                RUNNER_KEY="$RUNNER_COUNT"
-                echo "::debug::RUNNER_KEY: $RUNNER_KEY"
+        # ================================
+        # INITIALIZE VARIABLES
+        # ================================
+        RUNNER_COUNT=1
+        TOTAL_TESTS_IN_A_RUNNER=0
+        TOTAL_RUNNER_EXECUTION_TIME=0
 
-                # Initialize the JSON for the runner if not already set
-                if [ -z "${RUNNER_TESTS[$RUNNER_KEY]}" ]; then
-                  RUNNER_TESTS["$RUNNER_KEY"]="{\"$project\": [\"$test_identifier\"]}"
-                else
-                  # Update the project grouping within the runner
-                  if echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq -e ".\"$project\"" > /dev/null; then
-                    # Append to existing project
-                    RUNNER_TESTS["$RUNNER_KEY"]=$(echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq ".\"$project\" += [\"$test_identifier\"]")
-                  else
-                    # Add a new project
-                    RUNNER_TESTS["$RUNNER_KEY"]=$(echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq ". + {\"$project\": [\"$test_identifier\"]}")
-                  fi
-                fi
+        # Convert user input to milliseconds for calculations
+        MAX_RUN_TIME=$(( ${{ inputs.total-run-time-in-mins }} * 60 * 1000))
+        echo "📝 Configuration:"
+        echo "   Max Run Time: $MAX_RUN_TIME ms (${{ inputs.total-run-time-in-mins }} minutes)"
+        echo "   Recommended Workers: $RECOMMENDED_WORKERS"
+
+        # Get the test list from previous step
+        test_list='${{ steps.list-tests.outputs.TEST_LIST }}'
+
+        # ================================
+        # MAIN DISTRIBUTION LOOP
+        # ================================
+        echo "🔄 Processing tests for distribution..."
+
+        # Parse and iterate through each test
+        echo "$test_list" | jq -r '.[]' | {
+          declare -A RUNNER_TESTS  # Associative array to store test distribution
+          
+          while IFS= read -r test; do
+            echo "::debug::Processing test: $test"
+            
+            # Lookup execution time from state.json
+            time=$(jq -r --arg test "$test" '.[$test]' state.json)
+
+            # Extract project/browser name (e.g., "chromium" from "[chromium] › test.spec.ts")
+            project=$(echo "$test" | awk -F'›' '{print $1}' | xargs | sed 's/^\[//;s/\]$//')
+            echo "::debug::Project: $project"
+
+            # Extract test identifier (e.g., "demo-todo-app.spec.ts:45:7")
+            test_identifier=$(echo "$test" | awk -F'›' '{print $2}' | xargs)
+            echo "::debug::Test Identifier: $test_identifier"
+
+            # ================================
+            # PROCESS TESTS WITH KNOWN TIMES
+            # ================================
+            if [ "$time" != "null" ]; then
+              # Calculate if adding this test would exceed time limit
+              # Formula: (current_time + new_test_time) / workers <= max_time
+              if (( (TOTAL_RUNNER_EXECUTION_TIME + time) / RECOMMENDED_WORKERS <= MAX_RUN_TIME )); then
+                # Test fits in current runner
+                TOTAL_RUNNER_EXECUTION_TIME=$((TOTAL_RUNNER_EXECUTION_TIME + time))
+                TOTAL_TESTS_IN_A_RUNNER=$((TOTAL_TESTS_IN_A_RUNNER + 1))
+                echo "::debug::✅ Adding test to runner $RUNNER_COUNT: $test (${time}ms)"
               else
-                echo "::error title=Test Not Found::Test not found in state.json 👉 $test "
-                echo "::notice title=Directory Structure Updated::It seems the test directory structure was updated locally but it was not pushed to state.json."
-                echo "::  title=Pre-commit Hook Suggestion::NOTE: Ideally, this situation can be completely avoided by adding a pre-commit hook to automatically add touched (new/updated) tests to state.json on commit. %0ARefer to the readme of this action, if you want to learn how to do this."                
-                echo "::notice title=Next Steps::For now, you can either 'run missing tests only' or 'all the tests locally' to update the state.json snapshot file and upload it again for reference. Later, implement the pre-commit hook to avoid this situation in the future."
-                exit 1
+                # Current runner is full - finalize it and create a new one
+                echo "🏁 Finalizing Runner $RUNNER_COUNT..."
+                
+                # Calculate and display runner statistics
+                TOTAL_TIME_MS=$((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))
+                TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
+                MINUTES=$((TOTAL_TIME_SEC / 60))
+                SECONDS=$((TOTAL_TIME_SEC % 60))
+                
+                echo "::notice title=Runner $RUNNER_COUNT Summary::Runner $RUNNER_COUNT will execute $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approximately ${MINUTES}m ${SECONDS}s"
+                
+                # Initialize new runner
+                RUNNER_COUNT=$((RUNNER_COUNT + 1))
+                TOTAL_TESTS_IN_A_RUNNER=1
+                TOTAL_RUNNER_EXECUTION_TIME=$time
+                
+                echo "🆕 Creating Runner $RUNNER_COUNT for test: $test (${time}ms)"
               fi
-            done
 
-            # Debugging: Output the runner keys
-            echo "Keys in RUNNER_TESTS: ${!RUNNER_TESTS[@]}"
+              # ================================
+              # BUILD JSON STRUCTURE
+              # ================================
+              RUNNER_KEY="$RUNNER_COUNT"
+              echo "::debug::Assigning to RUNNER_KEY: $RUNNER_KEY"
 
-            # Build the final JSON structure
-            TEST_LOAD_DISTRIBUTION_JSON="{"
-            for runner in "${!RUNNER_TESTS[@]}"; do
-              if [[ "$TEST_LOAD_DISTRIBUTION_JSON" != "{" ]]; then
-                TEST_LOAD_DISTRIBUTION_JSON+=","
+              # Initialize runner's JSON structure if not already set
+              if [ -z "${RUNNER_TESTS[$RUNNER_KEY]}" ]; then
+                RUNNER_TESTS["$RUNNER_KEY"]="{\"$project\": [\"$test_identifier\"]}"
+              else
+                # Update existing runner's project grouping
+                if echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq -e ".\"$project\"" > /dev/null; then
+                  # Append to existing project
+                  RUNNER_TESTS["$RUNNER_KEY"]=$(echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq ".\"$project\" += [\"$test_identifier\"]")
+                else
+                  # Add new project to runner
+                  RUNNER_TESTS["$RUNNER_KEY"]=$(echo "${RUNNER_TESTS[$RUNNER_KEY]}" | jq ". + {\"$project\": [\"$test_identifier\"]}")
+                fi
               fi
-              TEST_LOAD_DISTRIBUTION_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq -c)"
-            done
-            TEST_LOAD_DISTRIBUTION_JSON+="}"
-
-            # Pretty-print the JSON using jq
-            echo "TEST_LOAD_DISTRIBUTION_JSON:"
-            echo "$TEST_LOAD_DISTRIBUTION_JSON" | jq
-            echo "test_load_json=$TEST_LOAD_DISTRIBUTION_JSON" >> $GITHUB_OUTPUT
-            
-            # Current runner is full; Add a new runner for the current test
-            TOTAL_TIME_MS=$((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))
-            TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
-            MINUTES=$((TOTAL_TIME_SEC / 60))
-            SECONDS=$((TOTAL_TIME_SEC % 60))
-            echo "::notice title=Runner $RUNNER_COUNT expected run time:: Runner $RUNNER_COUNT will run $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approx run time: ${MINUTES} min(s) and ${SECONDS} seconds"
-            
-            echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
-            echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_OUTPUT
-          }
-        shell: bash
-
-      - name: Generate JSON Matrix
-        id: set-matrix
-        run: |
-          MATRIX_JSON="["
-          for i in $(seq 1 $RUNNER_COUNT); do
-            if [ $i -gt 1 ]; then
-              MATRIX_JSON+=","
+            else
+              # ================================
+              # ERROR HANDLING: Missing test data
+              # ================================
+              echo "::error title=Test Not Found::Test not found in state.json 👉 $test"
+              echo "::notice title=Directory Structure Updated::It seems the test directory structure was updated locally but not pushed to state.json."
+              echo "::notice title=Post-commit Hook Suggestion::💡 This can be avoided by adding a post-commit hook to automatically update state.json on commit. Refer to the README for implementation details."
+              echo "::notice title=Next Steps::For now, you can either 'run missing tests only' or 'run all tests locally' to update the state.json snapshot file and upload it again."
+              exit 1
             fi
-            MATRIX_JSON+="\"$i\""
           done
-          MATRIX_JSON+="]"
 
-          echo "Generated matrix: $MATRIX_JSON"
-          echo "dynamic_matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-        shell: bash
+          # ================================
+          # FINALIZE DISTRIBUTION
+          # ================================
+          echo "::debug::Distribution complete. Runner keys: ${!RUNNER_TESTS[@]}"
+
+          # Build the final JSON structure for all runners
+          echo "🔧 Building final test distribution JSON..."
+          TEST_LOAD_DISTRIBUTION_JSON="{"
+          for runner in "${!RUNNER_TESTS[@]}"; do
+            if [[ "$TEST_LOAD_DISTRIBUTION_JSON" != "{" ]]; then
+              TEST_LOAD_DISTRIBUTION_JSON+=","
+            fi
+            TEST_LOAD_DISTRIBUTION_JSON+="\"$runner\": $(echo "${RUNNER_TESTS[$runner]}" | jq -c)"
+          done
+          TEST_LOAD_DISTRIBUTION_JSON+="}"
+
+          # Display final distribution (pretty-printed)
+          echo "📊 Final Test Load Distribution:"
+          echo "$TEST_LOAD_DISTRIBUTION_JSON" | jq
+          
+          # Export for use in subsequent steps
+          echo "test_load_json=$TEST_LOAD_DISTRIBUTION_JSON" >> $GITHUB_OUTPUT
+          
+          # Finalize the last runner's statistics
+          TOTAL_TIME_MS=$((TOTAL_RUNNER_EXECUTION_TIME / RECOMMENDED_WORKERS))
+          TOTAL_TIME_SEC=$((TOTAL_TIME_MS / 1000))
+          MINUTES=$((TOTAL_TIME_SEC / 60))
+          SECONDS=$((TOTAL_TIME_SEC % 60))
+          echo "::notice title=Runner $RUNNER_COUNT Summary::Runner $RUNNER_COUNT will execute $TOTAL_TESTS_IN_A_RUNNER tests using $RECOMMENDED_WORKERS workers in approximately ${MINUTES}m ${SECONDS}s"
+          
+          # Export runner count
+          echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_ENV
+          echo "RUNNER_COUNT=$RUNNER_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "✅ Test distribution completed successfully!"
+          echo "📈 Summary: $RUNNER_COUNT runner(s) created for optimal test execution"
+        }
+      shell: bash
+
+    # ------------------------------------------
+    # MATRIX GENERATION: Create GitHub Actions matrix strategy
+    # ------------------------------------------
+    - name: Generate Dynamic Matrix for Parallel Execution
+      id: set-matrix
+      run: |
+        echo "🎯 Generating dynamic matrix for $RUNNER_COUNT runner(s)..."
+
+        # Build JSON array for GitHub Actions matrix strategy
+        # Format: ["1", "2", "3"] for runner IDs
+        MATRIX_JSON="["
+        for i in $(seq 1 $RUNNER_COUNT); do
+          # Add comma separator for all but first element
+          if [ $i -gt 1 ]; then
+            MATRIX_JSON+=","
+          fi
+          MATRIX_JSON+="\"$i\""
+        done
+        MATRIX_JSON+="]"
+
+        echo "📋 Generated matrix: $MATRIX_JSON"
+        echo "   This will create $RUNNER_COUNT parallel runner(s)"
+
+        # Export for GitHub Actions matrix strategy
+        echo "dynamic_matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+
+        echo "✅ Matrix generation completed successfully!"
+      shell: bash
