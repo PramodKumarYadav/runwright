@@ -2,7 +2,7 @@
 
 The only known GitHub action (and solution), that allows you to finish your PlayWright tests in your chosen x minutes, while using optimal minimum number of GitHub runners. **
 
-![fast test run](docs/3k-tests-in-90-seconds.png)
+<img src="docs/3k-tests-in-90-seconds.png" alt="fast test run" width="70%">
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
@@ -10,47 +10,53 @@ The only known GitHub action (and solution), that allows you to finish your Play
 
 ## Uneven run time on each runner
 
-![uneven-run-time](docs/uneven-run-time.png)
+<img src="docs/uneven-run-time.png" alt="uneven-run-time" width="70%">
 
 ## Fixed runners that does not scale up or down based on test load
 
-![fixed-runners](docs/fixed-runners.png)
+<img src="docs/fixed-runners.png" alt="fixed-runners" width="70%">
 
 ## With RunWright
 
 ## Even test load distribution based on desired run time to finish tests.
 
-![even-load-distribution](docs/even-load-distribution.png)
+<img src="docs/even-load-distribution.png" alt="even-load-distribution" width="70%">
 
 ## Dynamic runners that scale up or down based on test load
 
-![dynamic-scaling-of-runners](docs/dynamic-scaling-of-runners.png)
+<img src="docs/dynamic-scaling-of-runners.png" alt="dynamic-scaling-of-runners" width="70%">
 
 ## 🚀 Core features
 
 - **🚀 Faster than Playwright Sharding**: ✅
-  - **Smart load balancing based on execution time and not just test count**: We create "bundle of tests and runners" based on:
-    - The time each test takes. 
-    - The total exepected time for run provided by user. 
-    - The cores availablity of runners. 
 
-    This makes make our total run time predictable and fast.
-  - **Distributed Run**: The number of bundles translates to number of runners.
-  - **Parallel Run**: The number of cores translates to number of workers (where workers = cores/2).
+   - **Smart load balancing based on execution time and not just test count**: We create "bundle of tests and runners" based on:
+
+      - The time each test takes.
+      - The total exepected time for run provided by user.
+      - The cores availablity of runners.
+
+      This makes make our total run time predictable and fast.
+
+   - **Distributed Run**: The number of bundles translates to number of runners.
+   - **Parallel Run**: The number of cores translates to number of workers (where workers = cores/2).
 
 - **↗️↘️ Dynamic sharding over Playwrights hard coded Sharding**: ✅
-  - Although this is not directly a Playwright sharder shortcoming but since not everyone is an expert with GitHub actions and the [playwright sharding github example](https://playwright.dev/docs/test-sharding#github-actions-example)
-  hard codes the number of shards in the workflow file, most teams end up using the example as-is in their projects and thus results into a inefficient hard coded runner strategy.  
 
-  Teams often increase runners to finish tests faster but when they do maintenance or add a few new tests, they end up spinning all those runners, resulting into waste and under utilisation of runners. 
+   - Although this is not directly a Playwright sharder shortcoming but since not everyone is an expert with GitHub actions and the [playwright sharding github example](https://playwright.dev/docs/test-sharding#github-actions-example)
+      hard codes the number of shards in the workflow file, most teams end up using the example as-is in their projects and thus results into a inefficient hard coded runner strategy.
+
+   Teams often increase runners to finish tests faster but when they do maintenance or add a few new tests, they end up spinning all those runners, resulting into waste and under utilisation of runners.
 
 - **💸 Cheaper than Playwright Sharding**: ✅
-  - Since we dynamically scale runners up and down to always create only the bare minimum runners required to do the job, we avoid waste in terms of CI minutes. 
-  For comparision, with playwright sharding teams end up hard coding more runners to bring down execution time and as a side affect increase cost to the company.
+
+   - Since we dynamically scale runners up and down to always create only the bare minimum runners required to do the job, we avoid waste in terms of CI minutes.
+      For comparision, with playwright sharding teams end up hard coding more runners to bring down execution time and as a side affect increase cost to the company.
 
 - **🌿 Greener than Playwright Sharding**: ✅
-  - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time, 
-  this is also a very efficient and thus greener alternative to Playwright Sharding. 
+
+   - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time,
+      this is also a very efficient and thus greener alternative to Playwright Sharding.
 
 ## Why this action?
 
@@ -63,29 +69,28 @@ There are 3 main steps involved:
 ### Step1: One time setup (in your test project)
 
 - [Install latest version of Node (or at least >=18)](https://nodejs.org/en)
-
 - [Install husky in your test project](https://typicode.github.io/husky/get-started.html).
-
 - Add a `pre-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/pre-commit).
-  - This will run `--only-changed` tests on local commits.
+
+   - This will run `--only-changed` tests on local commits.
 
 - Copy [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
-  - This will create a `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file that contains the mapping of test path and the time it took to run (in ms).
+
+   - This will create a `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file that contains the mapping of test path and the time it took to run (in ms).
 
 - Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below.
-`reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
-
+   `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
 - Add a `post-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
-  - This will automatically add `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file to the branch.
+
+   - This will automatically add `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file to the branch.
 
 - Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml) that can take inputs from user to run playwright commands and finish tests in x mins.
-
 - Add a example [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) that shows how to use the reusable workflow to run desired tests.
 
 ### Step2: Run tests based on the defined triggers (push to main, pull_request to main, schedule etc all)
 
 - Create an event that triggers the workflow and verify if the tests finish in approx same projected time.
- - For now, you can use the [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) you copied above to trigger and run these tests. Fork the repo and push something on your main branch to trigger tests.
+- For now, you can use the [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) you copied above to trigger and run these tests. Fork the repo and push something on your main branch to trigger tests.
 
 ### Step3: Report found issues
 
@@ -94,9 +99,7 @@ There are 3 main steps involved:
 ## Things to remember
 
 - This action is made to work with playwright option `fully parallel = true`. The action is not meant to deal with tests run in `serial` or `default` mode and thus can have side effects if your tests are not running fully parallel. This is intended to be addressed in one of future releases.
-
 - Do not use sharding related commands in the input playwright command to run; since this solution is meant to overcome the flaws of sharding. Using sharding again would introduce those short comings again.
-
 - If you are using custom powerful GitHub runners, use the same custom runner type for job that evaluates "RunWright" then what you would use in subsequent job for running tests.
 
 ## Inputs
@@ -151,27 +154,27 @@ pramodyadav@Pramods-Laptop runwright % git push --follow-tags
 
 ## Boundary value Tests
 
-Below are some tests to verify for some edge case scenarios and validate that the action works as expected. 
+Below are some tests to verify for some edge case scenarios and validate that the action works as expected.
 
 ### Test result when there are no tests to run
 
-![zero-tests-to-run](docs/0-zero-tests-to-run.png)
+<img src="docs/0-zero-tests-to-run.png" alt="zero-tests-to-run" width="70%">
 
 ### Test result when there are very few tests to run
 
-![just a few tests](docs/less-tests-equals-less-runners-and-less-time.png)
+<img src="docs/less-tests-equals-less-runners-and-less-time.png" alt="just a few tests" width="70%">
 
 ### Test result for approx (~1.5k) tests in total expected time of 2 mins
 
-![finish all 1.5k tests in 2 mins](docs/finish-1.5k-tests-in-2-mins-jobs.png)
+<img src="docs/finish-1.5k-tests-in-2-mins-jobs.png" alt="finish all 1.5k tests in 2 mins" width="70%">
 
-![finish all 1.5K tests in predefined time](docs/finish-1.5k-tests-in-2mins.png)
+<img src="docs/finish-1.5k-tests-in-2mins.png" alt="finish all 1.5K tests in predefined time" width="70%">
 
 [all 1.5k tests finished in less than 2 mins](https://www.loom.com/share/c13973941f60401797d840a31e3a6767?sid=c8741b3b-4863-4509-8d0a-43fb7aad8945)
 
 ### Test result for approx (~3k) tests in total expected time of 2 mins
 
-![finish all 3k tests in predefined time](docs/finish-3k-tests-in-2mins.png)
+<img src="docs/finish-3k-tests-in-2mins.png" alt="finish all 3k tests in predefined time" width="70%">
 
 [all 3k tests finished in approx 2 mins](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=d75b3fb8-0e11-4573-bc00-f575c99db6b9)
 
@@ -192,7 +195,8 @@ Below are some tests to verify for some edge case scenarios and validate that th
 ## Whats next?
 
 - [ ] Add option to deal with `fullyParallel=false`. This should cover the below scenarios:
-  - When `fullyParallel=false`.
-  - When `fullyParallel=true` but there are test files that contains `test.describe.configure({ mode: 'serial' });` or `test.describe.configure({ mode: 'default' });`
+
+   - When `fullyParallel=false`.
+   - When `fullyParallel=true` but there are test files that contains `test.describe.configure({ mode: 'serial' });` or `test.describe.configure({ mode: 'default' });`
 
 - [ ] Add option for when a user doesn't want to limit by time but want to limit the maximum runners to use.
