@@ -6,6 +6,12 @@ The only known GitHub action (and solution), that allows you to finish your Play
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
+> [!NOTE]
+> **Scope**: This action covers both execution modes:
+>    
+> - When `fullyParallel=true`. [ Run all individual tests in parallel on runners]
+> - When `fullyParallel=false`. [ Run all individual files in parallel on runners]
+
 ## Without RunWright
 
 ## Uneven run time on each runner
@@ -106,13 +112,21 @@ There are 3 main steps involved:
 
 ```yaml {"id":"01J2XFHJFST5N0A1651KZ5JCAT"}
 inputs:
-  total-run-time-in-mins:  
-    description: 'desired-total-test-run-time-in-mins'
+  total-run-time-in-mins:
+    description: "Desired total test run time in minutes (minimum 1 min)"
     required: true
+    type: string
 
-  pw-command-to-execute:  
-    description: 'playwright command to run tests'
+  pw-command-to-execute:
+    description: 'Playwright command to run tests (e.g., "npx playwright test")'
     required: true
+    type: string
+
+  fully-parallel:
+    description: "Whether Playwright is configured with fullyParallel=true (default: true). Set to false if fullyParallel=false in playwright.config"
+    required: false
+    default: "true"
+    type: string
 
 ```
 
@@ -121,36 +135,30 @@ inputs:
 ```yaml {"id":"01J2XFHJFST5N0A1651MMCD9FR"}
 outputs:
   dynamic-matrix:
-    description: "dynamic matrix to use"
+    description: "Dynamic matrix array for parallel runner strategy"
     value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
 
   test-load-distribution-json:
-    description: "test load distribution json"
+    description: "JSON object containing test distribution across runners"
     value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
 
-  recommended-workers:  
-    description: 'optimal number of workers to run tests'
+  recommended-workers:
+    description: "Optimal number of workers per runner based on CPU cores"
     value: ${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}
+
+  parallelism-mode:
+    description: "The parallelism mode being used (individual for fullyParallel=true, file-level for fullyParallel=false)"
+    value: ${{ steps.detect-playwright-config.outputs.DISTRIBUTION_MODE }}
 
 ```
 
-## Example usage
+## Usage
 
 Follow the instructions in  [Getting Started](#getting-started)  section that shows how to use this action. Other than that, below are some common examples:
 
+- [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
 - [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
 - [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
-- [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
-
-## Reference
-
-To create and push new tags (releases) of this action:
-
-```sh {"id":"01J2XFHJFT1K765K3D5J6BDSSC"}
-pramodyadav@Pramods-Laptop runwright % git tag -a -m "add your message here" v1                   
-pramodyadav@Pramods-Laptop runwright % git push --follow-tags   
-
-```
 
 ## Boundary value Tests
 
@@ -193,10 +201,5 @@ Below are some tests to verify for some edge case scenarios and validate that th
 </a>
 
 ## Whats next?
-
-- [ ] Add option to deal with `fullyParallel=false`. This should cover the below scenarios:
-
-   - When `fullyParallel=false`.
-   - When `fullyParallel=true` but there are test files that contains `test.describe.configure({ mode: 'serial' });` or `test.describe.configure({ mode: 'default' });`
 
 - [ ] Add option for when a user doesn't want to limit by time but want to limit the maximum runners to use.
