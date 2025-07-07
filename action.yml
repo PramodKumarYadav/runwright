@@ -48,6 +48,10 @@ outputs:
     description: "The parallelism mode being used (individual for fullyParallel=true, file-level for fullyParallel=false)"
     value: ${{ steps.detect-playwright-config.outputs.DISTRIBUTION_MODE }}
 
+  playwright-args-per-runner:
+    description: "Ready-to-use Playwright command arguments for each runner (format: {\"1\": \"test1.spec.ts test2.spec.ts --project=chromium\", \"2\": \"test3.spec.ts --project=webkit\"})"
+    value: ${{ steps.generate-playwright-args.outputs.playwright_args_json }}
+
 # ==========================================
 # COMPOSITE ACTION STEPS
 # ==========================================
@@ -545,4 +549,73 @@ runs:
         echo "dynamic_matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
         echo "✅ Matrix generation completed successfully!"
+      shell: bash
+
+    # ------------------------------------------
+    # PLAYWRIGHT ARGUMENTS: Generate ready-to-use command arguments
+    # ------------------------------------------
+    - name: Generate Playwright Arguments for Each Runner
+      id: generate-playwright-args
+      run: |
+        echo "🎯 Generating ready-to-use Playwright arguments for each runner..."
+
+        # Get the test distribution JSON from previous step
+        TEST_LOAD_JSON='${{ steps.calculate-required-runners.outputs.test_load_json }}'
+        
+        # Initialize the final arguments JSON
+        PLAYWRIGHT_ARGS_JSON="{"
+        first_runner=true
+        
+        # Iterate through each runner
+        for runner_id in $(seq 1 $RUNNER_COUNT); do
+          echo "🔧 Processing Runner $runner_id..."
+          
+          # Extract tests for current runner
+          RUNNER_TESTS=$(echo "$TEST_LOAD_JSON" | jq -r --arg key "$runner_id" '.[$key]')
+          
+          if [ "$RUNNER_TESTS" != "null" ] && [ "$RUNNER_TESTS" != "{}" ]; then
+            # Get all projects for this runner
+            PROJECTS=$(echo "$RUNNER_TESTS" | jq -r 'keys[]')
+            
+            # Build command arguments for this runner
+            RUNNER_ARGS=""
+            
+            for project in $PROJECTS; do
+              # Get test list for current project
+              TEST_LIST=$(echo "$RUNNER_TESTS" | jq -r --arg project "$project" '.[$project] | join(" ")')
+              
+              if [ -n "$TEST_LIST" ]; then
+                # Add project-specific arguments
+                if [ -n "$RUNNER_ARGS" ]; then
+                  RUNNER_ARGS="$RUNNER_ARGS && "
+                fi
+                RUNNER_ARGS="${RUNNER_ARGS}${{ inputs.pw-command-to-execute }} $TEST_LIST --project=$project --reporter=blob --workers=${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}"
+              fi
+            done
+            
+            # Add to JSON (escape quotes and handle commas)
+            if [ "$first_runner" = false ]; then
+              PLAYWRIGHT_ARGS_JSON+=","
+            fi
+            
+            # Escape the command for JSON
+            ESCAPED_ARGS=$(echo "$RUNNER_ARGS" | sed 's/"/\\"/g')
+            PLAYWRIGHT_ARGS_JSON+="\"$runner_id\": \"$ESCAPED_ARGS\""
+            first_runner=false
+            
+            echo "✅ Runner $runner_id args: $RUNNER_ARGS"
+          else
+            echo "⚠️  No tests found for Runner $runner_id"
+          fi
+        done
+        
+        PLAYWRIGHT_ARGS_JSON+="}"
+        
+        echo "📋 Generated Playwright arguments JSON:"
+        echo "$PLAYWRIGHT_ARGS_JSON" | jq
+        
+        # Export for use in caller workflows
+        echo "playwright_args_json=$PLAYWRIGHT_ARGS_JSON" >> $GITHUB_OUTPUT
+        
+        echo "✅ Playwright arguments generation completed successfully!"
       shell: bash
