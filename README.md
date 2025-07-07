@@ -12,6 +12,166 @@ The only known GitHub action (and solution), that allows you to finish your Play
 > - When `fullyParallel=true`. [ Run all individual tests in parallel on runners]
 > - When `fullyParallel=false`. [ Run all individual files in parallel on runners]
 
+## Usage (v3)
+```
+# Save filename as say run-tests-on-demand.yml
+name: 🔘 Run tests on demand
+
+on:
+  # Allows us to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      total-run-time-in-mins:
+        description: "Total expected run time in minutes"
+        required: true
+        default: "2"
+        type: string
+
+      pw-command-to-execute:
+        description: "playwright command to run"
+        required: true
+        default: "npx playwright test --project='chromium'"
+        type: string
+
+      fully-parallel:
+        description: "Run tests in fully parallel mode"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  runwright:
+    runs-on: ubuntu-latest
+    outputs:
+      dynamic_matrix: ${{ steps.runwright-action.outputs.dynamic-matrix }}
+      recommended_workers: ${{ steps.runwright-action.outputs.recommended-workers }}
+      parallelism-mode: ${{ steps.runwright-action.outputs.parallelism-mode }}
+      playwright-args-per-runner: ${{ steps.runwright-action.outputs.playwright-args-per-runner }}
+    steps:
+      - name: Get runwright parameters
+        uses: PramodKumarYadav/runwright@v3.0.0
+        id: runwright-action
+        with:
+          total-run-time-in-mins: ${{ inputs.total-run-time-in-mins }}
+          pw-command-to-execute: ${{ inputs.pw-command-to-execute }}
+          fully-parallel: ${{ inputs.fully-parallel }}
+
+  test:
+    # Only run this job if playwright-args-per-runner has some tests to run.
+    if: ${{ needs.runwright.outputs.playwright-args-per-runner != '{}' }}
+    timeout-minutes: 60
+    needs: runwright
+    runs-on: ubuntu-latest
+    environment: dev
+    container:
+      image: mcr.microsoft.com/playwright:v1.50.1-jammy
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(needs.runwright.outputs.dynamic_matrix) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mark Repository as Safe
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install project dependencies
+        run: npm ci
+
+      - name: Install jq to parse JSON in the next step
+        run: apt-get update && apt-get install -y jq
+
+      - name: Run Playwright Tests for Runner ${{ matrix.runner }}
+        env:
+          HOME: /root
+        run: |
+          # Get the ready-to-use Playwright command for this runner
+          PLAYWRIGHT_ARGS_JSON='${{ needs.runwright.outputs.playwright-args-per-runner }}'
+          RUNNER_KEY="${{ matrix.runner }}"
+
+          # Extract the command for current runner
+          PLAYWRIGHT_COMMAND=$(echo "$PLAYWRIGHT_ARGS_JSON" | jq -r --arg key "$RUNNER_KEY" '.[$key]')
+
+          if [ "$PLAYWRIGHT_COMMAND" != "null" ] && [ -n "$PLAYWRIGHT_COMMAND" ]; then
+            echo "🚀 Running Playwright tests for Runner $RUNNER_KEY..."
+            echo "⚙️  Parallelism Mode: ${{ needs.runwright.outputs.parallelism-mode }}"
+            echo "👥 Workers: ${{ needs.runwright.outputs.recommended_workers }}"
+            echo "Command: $PLAYWRIGHT_COMMAND"
+            
+            # Create directory for blob reports
+            mkdir -p add-all-blob-reports
+            
+            # Execute the command and move blob reports
+            eval "$PLAYWRIGHT_COMMAND"
+            if [ -d "blob-report" ]; then
+              mv blob-report/* add-all-blob-reports/ 2>/dev/null || true
+            fi
+          else
+            echo "⚠️  No tests assigned to Runner $RUNNER_KEY"
+          fi
+
+      - name: Upload blob report to GitHub Actions Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: add-all-blob-reports/
+          name: blob-report-${{ matrix.runner }}
+          retention-days: 1
+
+  merge-reports:
+    # Merge reports after playwright-tests, even if some shards have failed
+    if: ${{ needs.test.result != 'cancelled' && needs.test.result != 'skipped' }}
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report--attempt-${{ github.run_attempt }}
+          path: playwright-report
+          retention-days: 14
+```
+
+## Usage (v2 and below. Also some practical use cases with reusable worflows design)
+
+Follow the instructions in  [Getting Started](#getting-started)  section that shows how to use this action. Other than that, below are some common examples that covers usage in v2 with some reusable workflows:
+
+- [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
+- [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
+- [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
+
+NOTE: As a assignment, see if you can convert the above example of v3 in a reusable workflow with triggers as shown in above URLs.
+
 ## Without RunWright
 
 ## Uneven run time on each runner
@@ -104,61 +264,9 @@ There are 3 main steps involved:
 
 ## Things to remember
 
-- This action is made to work with playwright option `fully parallel = true`. The action is not meant to deal with tests run in `serial` or `default` mode and thus can have side effects if your tests are not running fully parallel. This is intended to be addressed in one of future releases.
+- This action is made to work with both playwright options `fully parallel = true` and `fully parallel = false`. If you see any side effects while using this action, please raise a issue. 
 - Do not use sharding related commands in the input playwright command to run; since this solution is meant to overcome the flaws of sharding. Using sharding again would introduce those short comings again.
 - If you are using custom powerful GitHub runners, use the same custom runner type for job that evaluates "RunWright" then what you would use in subsequent job for running tests.
-
-## Inputs
-
-```yaml {"id":"01J2XFHJFST5N0A1651KZ5JCAT"}
-inputs:
-  total-run-time-in-mins:
-    description: "Desired total test run time in minutes (minimum 1 min)"
-    required: true
-    type: string
-
-  pw-command-to-execute:
-    description: 'Playwright command to run tests (e.g., "npx playwright test")'
-    required: true
-    type: string
-
-  fully-parallel:
-    description: "Whether Playwright is configured with fullyParallel=true (default: true). Set to false if fullyParallel=false in playwright.config"
-    required: false
-    default: "true"
-    type: string
-
-```
-
-## Outputs
-
-```yaml {"id":"01J2XFHJFST5N0A1651MMCD9FR"}
-outputs:
-  dynamic-matrix:
-    description: "Dynamic matrix array for parallel runner strategy"
-    value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
-
-  test-load-distribution-json:
-    description: "JSON object containing test distribution across runners"
-    value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
-
-  recommended-workers:
-    description: "Optimal number of workers per runner based on CPU cores"
-    value: ${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}
-
-  parallelism-mode:
-    description: "The parallelism mode being used (individual for fullyParallel=true, file-level for fullyParallel=false)"
-    value: ${{ steps.detect-playwright-config.outputs.DISTRIBUTION_MODE }}
-
-```
-
-## Usage
-
-Follow the instructions in  [Getting Started](#getting-started)  section that shows how to use this action. Other than that, below are some common examples:
-
-- [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
-- [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
-- [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
 
 ## Boundary value Tests
 
