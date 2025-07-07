@@ -589,7 +589,7 @@ runs:
                 if [ -n "$RUNNER_ARGS" ]; then
                   RUNNER_ARGS="$RUNNER_ARGS && "
                 fi
-                RUNNER_ARGS="${RUNNER_ARGS}${{ inputs.pw-command-to-execute }} $TEST_LIST --reporter=blob --workers=${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}"
+                RUNNER_ARGS="${RUNNER_ARGS}${{ inputs.pw-command-to-execute }} $TEST_LIST --project=$project --reporter=blob --workers=${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}"
               fi
             done
             
