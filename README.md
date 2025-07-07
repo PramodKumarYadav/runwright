@@ -6,10 +6,11 @@ The only known GitHub action (and solution), that allows you to finish your Play
 
 ** At the time of writing, there are no known other solutions (paid or open source), that can do this.
 
-> Scope: This action covers both execution modes:
-   
-   - When `fullyParallel=true`. [ Run all individual tests in parallel on runners]
-   - When `fullyParallel=false`. [ Run all individual files in parallel on runners]
+> [!INFO]
+> **Scope**: This action covers both execution modes:
+>    
+> - When `fullyParallel=true`. [ Run all individual tests in parallel on runners]
+> - When `fullyParallel=false`. [ Run all individual files in parallel on runners]
 
 ## Without RunWright
 
@@ -158,8 +159,6 @@ Follow the instructions in  [Getting Started](#getting-started)  section that sh
 - [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
 - [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
 - [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
-
-
 
 ## Boundary value Tests
 
