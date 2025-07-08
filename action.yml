@@ -590,10 +590,15 @@ runs:
                 if [ -n "$RUNNER_ARGS" ]; then
                   RUNNER_ARGS="$RUNNER_ARGS && "
                 fi
-                RUNNER_ARGS="${RUNNER_ARGS} $TEST_LIST --project=$project --reporter=blob --workers=${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}"
+                RUNNER_ARGS="${RUNNER_ARGS} $TEST_LIST --project=$project"
               fi
             done
             
+            # Add workers flag at the end for the entire runner command
+            if [ -n "$RUNNER_ARGS" ]; then
+              RUNNER_ARGS="$RUNNER_ARGS --workers=${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}"
+            fi
+
             # Add to JSON (escape quotes and handle commas)
             if [ "$first_runner" = false ]; then
               PLAYWRIGHT_ARGS_JSON+=","
