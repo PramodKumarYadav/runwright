@@ -556,6 +556,7 @@ runs:
     # ------------------------------------------
     - name: Generate Playwright Arguments for Each Runner
       id: generate-playwright-args
+      shell: bash
       run: |
         echo "🎯 Generating ready-to-use Playwright arguments for each runner..."
 
@@ -618,4 +619,4 @@ runs:
         echo "playwright_args_json=$PLAYWRIGHT_ARGS_JSON" >> $GITHUB_OUTPUT
         
         echo "✅ Playwright arguments generation completed successfully!"
-      shell: bash
+      
