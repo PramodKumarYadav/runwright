@@ -215,10 +215,19 @@ runs:
         # INPUT VALIDATION
         # ================================
         # Validate minimum time requirement
-        REQUESTED_TIME=${{ inputs.total-run-time-in-mins }}
-        if [ "$REQUESTED_TIME" -lt 1 ]; then
+        REQUESTED_TIME="${{ inputs.total-run-time-in-mins }}"
+        
+        # Use awk for floating-point comparison since bash only handles integers
+        if [ $(echo "$REQUESTED_TIME < 1" | awk '{print ($1 < $3)}') -eq 1 ]; then
           echo "::error title=Invalid Time Input::Total run time must be at least 1 minute. Received: $REQUESTED_TIME minutes"
           echo "::notice title=Minimum Time Requirement::Please set total-run-time-in-mins to 1 or higher for optimal test distribution."
+          exit 1
+        fi
+        
+        # Additional validation to ensure it's a valid number
+        if ! echo "$REQUESTED_TIME" | grep -E '^[0-9]+(\.[0-9]+)?$' > /dev/null; then
+          echo "::error title=Invalid Input Format::Total run time must be a valid number. Received: '$REQUESTED_TIME'"
+          echo "::notice title=Valid Format Examples::Use values like: 1, 1.5, 2, 5.25, etc."
           exit 1
         fi
         
