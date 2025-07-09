@@ -211,6 +211,19 @@ runs:
         TOTAL_TESTS_IN_A_RUNNER=0
         TOTAL_RUNNER_EXECUTION_TIME=0
 
+        # ================================
+        # INPUT VALIDATION
+        # ================================
+        # Validate minimum time requirement
+        REQUESTED_TIME=${{ inputs.total-run-time-in-mins }}
+        if [ "$REQUESTED_TIME" -lt 1 ]; then
+          echo "::error title=Invalid Time Input::Total run time must be at least 1 minute. Received: $REQUESTED_TIME minutes"
+          echo "::notice title=Minimum Time Requirement::Please set total-run-time-in-mins to 1 or higher for optimal test distribution."
+          exit 1
+        fi
+        
+        echo "✅ Input validation passed. Target time: $REQUESTED_TIME minutes"
+
         # Convert user input to milliseconds for calculations
         MAX_RUN_TIME=$(( ${{ inputs.total-run-time-in-mins }} * 60 * 1000))
         echo "📝 Configuration:"
