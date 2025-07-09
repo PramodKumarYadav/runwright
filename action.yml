@@ -126,7 +126,7 @@ runs:
         test_list=$(${{ inputs.pw-command-to-execute }} --list --reporter=list 2>&1 || true)
 
         # Handle case when no tests are found
-        if echo "$test_list" | grep -q "Error: No tests found."; then
+        if echo "$test_list" | grep -q "Error: No tests found"; then
           echo "⚠️  No tests found. Setting RUNNER_COUNT to 1 and exiting gracefully."
           echo "RUNNER_COUNT=1" >> $GITHUB_ENV
           echo "RUNNER_COUNT=1" >> $GITHUB_OUTPUT
