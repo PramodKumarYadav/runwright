@@ -64,8 +64,8 @@ There are 3 main steps involved:
 ### Step2: Run tests based on the defined triggers (push to main, pull_request to main, schedule, on demand etc all)
 
 - To test the setup use one of below workflows (either in your own test repository or fork the above sandbox repository to try out).
-   - [run selected tests on demand - using reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
-   - [run selected tests on demand - using standlone workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml)
+   - [run selected tests on demand - using reusable workflow that points to a fixed version say v2.1.0 of runwright action](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
+   - [run selected tests on demand - using standlone workflow - that points to the latest main version of runwright action](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml)
 
 > For reference, a example-workflow.yml file is also available in the root of the RunWright GitHub project. 
 
