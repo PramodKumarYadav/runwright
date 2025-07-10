@@ -104,34 +104,26 @@ There are 3 main steps involved:
 | 19 | Output format validation | [check any of previous runs] | All outputs should be valid JSON and consumable by workflows | ✅ All outputs are properly formatted and consumable | ✅ PASS |
 | 20 | Invalid time input (< 1 minute) | [Test Command Placeholder] | Should handle minimum time constraint appropriately | ✅ Validates minimum 1 minute requirement | ✅ [PASS](https://github.com/PramodKumarYadav/playwright-sandbox/actions/runs/16180781972) |
 
-## Troubleshooting
-
-- It could be a good idea to generate the `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file from scratch every few days or weeks to avoid having redundant test path and names.
-
-## Like my work and want to support or sponsor?
-
-<a href="https://buymeacoffee.com/power.tester" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px; width: 217px; border-radius: 8px; margin-bottom: 15px;">
-</a>
-
-<a href="https://github.com/sponsors/PramodKumarYadav" target="_blank">
-  <img src="https://img.shields.io/badge/Sponsor%20Me%20on%20GitHub-%E2%9D%A4-6f42c1?style=for-the-badge&logo=github-sponsors" alt="Sponsor Me on GitHub" style="height: 60px; width: 217px; border-radius: 8px;">
-</a>
-
-## Final thoughts: 💡 Inner workings
+## 💡 Inner workings
 
 For the curious minds, here are the equations that I used to device this solution. 
 
 🔁 Definitions
 
 Let:
--  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
--  N = total number of tests to run (from playwright command to run with --list option)
--  TotalLoad = Σ T_i = total test load (in terms of test run time)
--  Cores = number of cores per runner 
--  Threads (per runner) = Cores / 2
--  Runners = number of runners
 -  TargetRunTime = total desired time to complete the run (in minutes)
+   - We get this input from the user. 
+-  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
+   - We get this value from `state.json` file that is updated on a post-commit hook.
+-  N = total number of tests to run.
+   - We get this by running playwright command with `--list` option.
+-  TotalLoad = Σ T_i = total test load (in terms of test run time)
+   - We iterate over each runner to keep the Σ T_i <= TargetRunTime
+-  Cores = number of cores per runner.
+-  Threads (per runner) = Cores / 2
+   - Recommended Threads per runner is half of cores. 
+-  Runners = Total number of required runners.
+   - We get this from equation given in the next section.
 
 📐 Equation
 
@@ -152,6 +144,20 @@ Solving for Runners:
 
 ![alt text](./docs/image-4.png)
 
+## Troubleshooting
+
+- It could be a good idea to generate the [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file from scratch every few days or weeks to avoid having redundant test path and names.
+
 ## Whats next?
 
 - [ ] Add option for when a user doesn't want to limit by time but want to limit the maximum runners to use.
+
+## Like my work and want to support or sponsor?
+
+<a href="https://buymeacoffee.com/power.tester" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px; width: 217px; border-radius: 8px; margin-bottom: 15px;">
+</a>
+
+<a href="https://github.com/sponsors/PramodKumarYadav" target="_blank">
+  <img src="https://img.shields.io/badge/Sponsor%20Me%20on%20GitHub-%E2%9D%A4-6f42c1?style=for-the-badge&logo=github-sponsors" alt="Sponsor Me on GitHub" style="height: 60px; width: 217px; border-radius: 8px;">
+</a>
