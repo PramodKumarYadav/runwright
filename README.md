@@ -118,9 +118,10 @@ Let:
 -  N = total number of tests to run.
    - We get this by running playwright command with [`--list`](https://playwright.dev/docs/test-cli#all-options) option.
 -  TotalLoad = Σ T_i = total test load (in terms of test run time)
-   - We iterate over each runner to keep the Σ T_i <= TargetRunTime
+   - We iterate over each runner to keep the `Σ T_i <= TargetRunTime`. 
+   - Note that the total run time for each runner is affected by the number of parallel threads and is explained in more details in the next section.
 -  Cores = number of cores per runner.
-   - For Linux runners, NUM_CORES=$(nproc)
+   - For Linux runners, `NUM_CORES=$(nproc)`
 -  Threads (per runner).
    - [Recommended Threads per runner](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration) is half of cores; i.e. (Threads = Cores / 2). 
 -  Runners = Total number of required runners.
