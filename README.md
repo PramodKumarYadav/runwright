@@ -1,26 +1,19 @@
 # RunWright
 
-The only known GitHub action (and solution), that allows you to finish your PlayWright tests in your chosen x minutes, while using optimal minimum number of GitHub runners. **
+## Why this action?
+
+This [article](https://pramodkumaryadav.github.io/power-tester/blogs/finish-fast-in-2-mins.html) explains, in detail, the need for this action and the problem it solves. 
+
+## 🚀 Core features
+
+In Summary the core features are:
+- The power to finish thousands of your tests in a pre defined desired run time (say 2 mins or 5 mins).
+- Smart runner orchestration that scales runners up or down based on your test load (where test load is in terms of time - not just count).
+- Equal test load distribution (in terms of execution time, not just count).
+
+In below example, we see more than three thousand tests run in just 1.5 minutes with a desired run time of 2 mins in total. 
 
 <img src="docs/3k-tests-in-90-seconds.png" alt="fast test run" width="70%">
-
-** At the time of writing, there are no known other solutions (paid or open source), that can do this.
-
-> [!NOTE]
-> **Scope**: This action covers both execution modes:
->    
-> - When `fullyParallel=true`. [ Run all individual tests in parallel on runners]
-> - When `fullyParallel=false`. [ Run all individual files in parallel on runners]
-
-## Without RunWright
-
-## Uneven run time on each runner
-
-<img src="docs/uneven-run-time.png" alt="uneven-run-time" width="70%">
-
-## Fixed runners that does not scale up or down based on test load
-
-<img src="docs/fixed-runners.png" alt="fixed-runners" width="70%">
 
 ## With RunWright
 
@@ -31,6 +24,60 @@ The only known GitHub action (and solution), that allows you to finish your Play
 ## Dynamic runners that scale up or down based on test load
 
 <img src="docs/dynamic-scaling-of-runners.png" alt="dynamic-scaling-of-runners" width="70%">
+
+** At the time of writing this document, there are no known other solutions (paid or open source), that can do this using Playwright and GitHub.
+
+## Scope
+
+This action covers both execution modes in Playwright. i.e.
+- When `fullyParallel=true`. [ Parallel run all individual test cases on runners]
+- When `fullyParallel=false`. [ Parallel run all individual test files on runners]
+
+## Getting Started
+
+There are 3 main steps involved:
+
+### Step1: One time setup (in your test project)
+
+- [Install latest version of Node (or at least >=18)](https://nodejs.org/en)
+- [Install husky in your test project](https://typicode.github.io/husky/get-started.html).
+- Add a `pre-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/pre-commit).
+
+   - This will run `--only-changed` tests on local commits.
+
+- Copy [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
+
+   - This will create a [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file that contains the mapping of test path and the time it took to run (in ms).
+
+- Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below.
+   `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
+- Add a `post-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
+
+   - This will automatically stage and commit the updated [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file to the feature branch.
+
+- Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml) that can take inputs from user to run playwright commands and finish tests in x mins.
+- Add a example [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) that shows how to use the reusable workflow to run desired tests. Here are a few examples of `trigger workflows`.
+   - [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
+   - [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
+   - [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
+
+### Step2: Run tests based on the defined triggers (push to main, pull_request to main, schedule, on demand etc all)
+
+- To test the setup use one of below workflows (either in your own test repository or fork the above sandbox repository to try out).
+   - [run selected tests on demand - using reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
+   - [run selected tests on demand - using standlone workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml)
+
+> For reference, a example-workflow.yml file is also available in the root of the RunWright GitHub project. 
+
+### Step3: Report found issues
+
+- If you find any issues, use the [issues page](https://github.com/PramodKumarYadav/runwright/issues) to raise them.
+
+## Things to remember
+
+- Do not use sharding related commands in the input playwright command to run; since this solution is meant to overcome the flaws of sharding. Using sharding again would introduce those short comings again.
+- If you are using custom powerful GitHub runners, use the same custom runner type for job that evaluates "RunWright" then what you would use in subsequent job for running tests. This is important to correctly calcualte the workers (threads), which is half of cores of the runners.
+
 
 ## 🧪 Tests
 
@@ -56,159 +103,6 @@ The only known GitHub action (and solution), that allows you to finish your Play
 | 18 | Custom runner types compatibility | [Test Command Placeholder] | Should work with custom GitHub runner configurations | ✅ Compatible with custom runner specifications | ？ NOT-YET-TESTED |
 | 19 | Output format validation | [check any of previous runs] | All outputs should be valid JSON and consumable by workflows | ✅ All outputs are properly formatted and consumable | ✅ PASS |
 | 20 | Invalid time input (< 1 minute) | [Test Command Placeholder] | Should handle minimum time constraint appropriately | ✅ Validates minimum 1 minute requirement | ✅ [PASS](https://github.com/PramodKumarYadav/playwright-sandbox/actions/runs/16180781972) |
-## 🚀 Core features
-
-- **🚀 Faster than Playwright Sharding**: ✅
-
-   - **Smart load balancing based on execution time and not just test count**: We create "bundle of tests and runners" based on:
-
-      - The time each test takes.
-      - The total exepected time for run provided by user.
-      - The cores availablity of runners.
-
-      This makes make our total run time predictable and fast.
-
-   - **Distributed Run**: The number of bundles translates to number of runners.
-   - **Parallel Run**: The number of cores translates to number of workers (where workers = cores/2).
-
-- **↗️↘️ Dynamic sharding over Playwrights hard coded Sharding**: ✅
-
-   - Although this is not directly a Playwright sharder shortcoming but since not everyone is an expert with GitHub actions and the [playwright sharding github example](https://playwright.dev/docs/test-sharding#github-actions-example)
-      hard codes the number of shards in the workflow file, most teams end up using the example as-is in their projects and thus results into a inefficient hard coded runner strategy.
-
-   Teams often increase runners to finish tests faster but when they do maintenance or add a few new tests, they end up spinning all those runners, resulting into waste and under utilisation of runners.
-
-- **💸 Cheaper than Playwright Sharding**: ✅
-
-   - Since we dynamically scale runners up and down to always create only the bare minimum runners required to do the job, we avoid waste in terms of CI minutes.
-      For comparision, with playwright sharding teams end up hard coding more runners to bring down execution time and as a side affect increase cost to the company.
-
-- **🌿 Greener than Playwright Sharding**: ✅
-
-   - Since we always only create the exact amount of runners we need to do the job (no less, no more), and since each runner is optimially utilised to finish all runners at approx same time,
-      this is also a very efficient and thus greener alternative to Playwright Sharding.
-
-## Why this action?
-
-This [article](https://pramodkumaryadav.github.io/power-tester/blogs/finish-fast-in-2-mins.html) explains, in detail, the need for this action and the problem it solves.
-
-## Getting Started
-
-There are 3 main steps involved:
-
-### Step1: One time setup (in your test project)
-
-- [Install latest version of Node (or at least >=18)](https://nodejs.org/en)
-- [Install husky in your test project](https://typicode.github.io/husky/get-started.html).
-- Add a `pre-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/pre-commit).
-
-   - This will run `--only-changed` tests on local commits.
-
-- Copy [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and put it in the root repository.
-
-   - This will create a `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file that contains the mapping of test path and the time it took to run (in ms).
-
-- Update [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file reporters to include this reporter as shown below.
-   `reporter: [["list"], ["html"], ["github"], ["./state-reporter.js"]],`
-- Add a `post-commit` hook file as shown [here](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.husky/post-commit).
-
-   - This will automatically add `[state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)` file to the branch.
-
-- Add a [reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/reusable-workflow.yml) that can take inputs from user to run playwright commands and finish tests in x mins.
-- Add a example [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) that shows how to use the reusable workflow to run desired tests.
-
-### Step2: Run tests based on the defined triggers (push to main, pull_request to main, schedule etc all)
-
-- Create an event that triggers the workflow and verify if the tests finish in approx same projected time.
-- For now, you can use the [trigger workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml) you copied above to trigger and run these tests. Fork the repo and push something on your main branch to trigger tests.
-
-### Step3: Report found issues
-
-- If you find any issues, use the [issues page](https://github.com/PramodKumarYadav/runwright/issues) to raise them.
-
-## Things to remember
-
-- This action is made to work with playwright option `fully parallel = true`. The action is not meant to deal with tests run in `serial` or `default` mode and thus can have side effects if your tests are not running fully parallel. This is intended to be addressed in one of future releases.
-- Do not use sharding related commands in the input playwright command to run; since this solution is meant to overcome the flaws of sharding. Using sharding again would introduce those short comings again.
-- If you are using custom powerful GitHub runners, use the same custom runner type for job that evaluates "RunWright" then what you would use in subsequent job for running tests.
-
-## Inputs
-
-```yaml {"id":"01J2XFHJFST5N0A1651KZ5JCAT"}
-inputs:
-  total-run-time-in-mins:
-    description: "Desired total test run time in minutes (minimum 1 min)"
-    required: true
-    type: string
-
-  pw-command-to-execute:
-    description: 'Playwright command to run tests (e.g., "npx playwright test")'
-    required: true
-    type: string
-
-  fully-parallel:
-    description: "Whether Playwright is configured with fullyParallel=true (default: true). Set to false if fullyParallel=false in playwright.config"
-    required: false
-    default: "true"
-    type: string
-
-```
-
-## Outputs
-
-```yaml {"id":"01J2XFHJFST5N0A1651MMCD9FR"}
-outputs:
-  dynamic-matrix:
-    description: "Dynamic matrix array for parallel runner strategy"
-    value: ${{ steps.set-matrix.outputs.dynamic_matrix }}
-
-  test-load-distribution-json:
-    description: "JSON object containing test distribution across runners"
-    value: ${{ steps.calculate-required-runners.outputs.test_load_json }}
-
-  recommended-workers:
-    description: "Optimal number of workers per runner based on CPU cores"
-    value: ${{ steps.get-number-of-cpu-cores-to-decide-on-worker-count.outputs.RECOMMENDED_WORKERS }}
-
-  parallelism-mode:
-    description: "The parallelism mode being used (individual for fullyParallel=true, file-level for fullyParallel=false)"
-    value: ${{ steps.detect-playwright-config.outputs.DISTRIBUTION_MODE }}
-
-```
-
-## Usage
-
-Follow the instructions in  [Getting Started](#getting-started)  section that shows how to use this action. Other than that, below are some common examples:
-
-- [run selected tests on demand](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
-- [run only new or updated tests in a pull request](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-only-touched-tests-on-pull-requests.yml)
-- [run all tests on a push to main](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-all-tests-on-push-to-main.yml)
-
-## Boundary value Tests
-
-Below are some tests to verify for some edge case scenarios and validate that the action works as expected.
-
-### Test result when there are no tests to run
-
-<img src="docs/0-zero-tests-to-run.png" alt="zero-tests-to-run" width="70%">
-
-### Test result when there are very few tests to run
-
-<img src="docs/less-tests-equals-less-runners-and-less-time.png" alt="just a few tests" width="70%">
-
-### Test result for approx (~1.5k) tests in total expected time of 2 mins
-
-<img src="docs/finish-1.5k-tests-in-2-mins-jobs.png" alt="finish all 1.5k tests in 2 mins" width="70%">
-
-<img src="docs/finish-1.5k-tests-in-2mins.png" alt="finish all 1.5K tests in predefined time" width="70%">
-
-[all 1.5k tests finished in less than 2 mins](https://www.loom.com/share/c13973941f60401797d840a31e3a6767?sid=c8741b3b-4863-4509-8d0a-43fb7aad8945)
-
-### Test result for approx (~3k) tests in total expected time of 2 mins
-
-<img src="docs/finish-3k-tests-in-2mins.png" alt="finish all 3k tests in predefined time" width="70%">
-
-[all 3k tests finished in approx 2 mins](https://www.loom.com/share/7e2a3f093d264619886c6b261696af86?sid=d75b3fb8-0e11-4573-bc00-f575c99db6b9)
 
 ## Troubleshooting
 
@@ -223,6 +117,40 @@ Below are some tests to verify for some edge case scenarios and validate that th
 <a href="https://github.com/sponsors/PramodKumarYadav" target="_blank">
   <img src="https://img.shields.io/badge/Sponsor%20Me%20on%20GitHub-%E2%9D%A4-6f42c1?style=for-the-badge&logo=github-sponsors" alt="Sponsor Me on GitHub" style="height: 60px; width: 217px; border-radius: 8px;">
 </a>
+
+## Final thoughts: 💡 Inner workings
+
+For the curious minds, here are the equations that I used to device this solution. 
+
+🔁 Definitions
+
+Let:
+-  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
+-  N = total number of tests to run (from playwright command to run with --list option)
+-  TotalLoad = Σ T_i = total test load (in terms of test run time)
+-  Cores = number of cores per runner 
+-  Threads (per runner) = Cores / 2
+-  Runners = number of runners
+-  TargetRunTime = total desired time to complete the run (in minutes)
+
+📐 Equation
+
+
+Since we know every individual TestRunTimeForEachTest(i) from state.json, the total workload is:
+
+![alt text](image-1.png)
+
+Total parallel capacity available on the runners:
+
+![alt text](image-2.png)
+
+Equating Load and Capacity:
+
+![alt text](image-3.png)
+
+Solving for Runners:
+
+![alt text](image-4.png)
 
 ## Whats next?
 
