@@ -112,16 +112,17 @@ For the curious minds, here are the equations that I used to device this solutio
 
 Let:
 -  TargetRunTime = total desired time to complete the run (in minutes)
-   - We get this input from the user. 
+   - We get this as [input from the user](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml). 
 -  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
-   - We get this value from `state.json` file that is updated on a post-commit hook.
+   - We get this value from [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)  file that is updated on a post-commit hook.
 -  N = total number of tests to run.
-   - We get this by running playwright command with `--list` option.
+   - We get this by running playwright command with [`--list`](https://playwright.dev/docs/test-cli#all-options) option.
 -  TotalLoad = Σ T_i = total test load (in terms of test run time)
    - We iterate over each runner to keep the Σ T_i <= TargetRunTime
 -  Cores = number of cores per runner.
--  Threads (per runner) = Cores / 2
-   - Recommended Threads per runner is half of cores. 
+   - For Linux runners, NUM_CORES=$(nproc)
+-  Threads (per runner).
+   - [Recommended Threads per runner](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration) is half of cores; i.e. (Threads = Cores / 2). 
 -  Runners = Total number of required runners.
    - We get this from equation given in the next section.
 
