@@ -24,9 +24,7 @@ This action covers both execution modes in Playwright. i.e.
 We will explain this by looking into details of how Playwright Sharding works and what problems it brings with its implementation. 
 
 ## With Playwright Sharding
-[Playwright Sharding](https://playwright.dev/docs/test-sharding#introduction) is a out-of-the-box solution from Playwright to allow distributed runs on any machine. Playwright team also gives examples of how to use sharding using [GitHub actions example](https://playwright.dev/docs/test-sharding#github-actions-example). 
-
-However, there are two major flaws in this solution and setup. 
+[Playwright Sharding](https://playwright.dev/docs/test-sharding#introduction) is a out-of-the-box solution from Playwright to allow distributed runs on any machine. Its inner workings and GitHub usage examples has two main flaws.
 
 ### 1. Playwright sharding results into uneven test distribution on runners.
 
@@ -40,19 +38,6 @@ Playwright gives a [GitHub actions example](https://playwright.dev/docs/test-sha
 
 ![fixed runners](./docs/fixed-runners.png)
 
-## Consequences and results
-
-### 1. 🐌 Slow system tests cannot be run with every pull request. 
-- **Broken trust on tests**: Tests that aren't run (and thus fixed) with PRs, fail frequently, often due to new changes, thus creating false positives, and over time bringing down teams trust in them.
-- **Maintenance fatigue in QAs**: QAs find themselves being stuck in this never ending cycle of fixing broken tests, creating maintenance fatigue. Rather rather than doing actual testing, or writing new missing tests or learning and mentoring. 
-- **Discourage team from test expansion**: Increased test run times creates pressure on team to limit test suite growth rather than add more tests and improve test coverage.
-
-
-### 2. 📉 Hardware scaling has diminishing returns.
-- **Deminishing results over time**: Adding more runners doesn't guarantee proportional time savings and have infact diminishing results.
-- **Escalating costs**: Infrastructure costs grow faster than their desired performance benefits.
-- **Poor scalability**: Approach doesn't scale well with increased amount of tests.
-
 ## With RunWright
 
 ## 1. Even test load distribution, based on your pre-decided total run time wishes, to finish tests.
@@ -63,20 +48,22 @@ Playwright gives a [GitHub actions example](https://playwright.dev/docs/test-sha
 
 <img src="docs/dynamic-scaling-of-runners.png" alt="dynamic-scaling-of-runners" width="70%">
 
-## Consequences and results
+## Pros and Cons: Playwright Sharding vs RunWright
 
-### 1. ⚡️ Fast system test runs that can now be run with every pull request. 
-- **Timely feedback from tests and tests that can be trusted**: Tests that are run and fixed with PRs, gives developers timely feedback. The chances of such tests failing post merge to main are very low and when they fail they often give **true positivies** and thus tests that the team can rely on.  
-- **No Maintenance fatigue in QAs**: When each developer is responsible for fixing the tests that are broken due to their own changes, maintenance scales well. It frees up time for QAs to do actual testing, writing new missing tests, learning useful techniques and mentoring other team members on testing and automation. 
-- **Encourage team for test expansion and increase coverage**: When teams have a solution and a setup that can always finish within their pre-defined desired test-run times, it encourages them to write missing tests to increase test coverage and not worry about over optimization to keep run-times in check.
+| Aspect | 🚫 Playwright Sharding | ✅ RunWright |
+|--------|------------------------|-------------|
+| **Timely feedback on pull requests** | 🐌 Test runs that take long time **cannot be run with every pull request**. | ⚡️ Fast and predictable run times makes it **possible to run system tests with every PR**. |
+| **Trust on Tests** | 📉 **Tests that aren't run with each PR, doesn't get fixed with each PR**. They are often run after the new changes are already merged in the main branch. As seen frequently, such tests give **false positives** due to new changes and **breaks teams trust** in them. | 📈 **Tests that are run with every PR gets fixed with the PRs**. They provide timely feedback to developers, give **true positives** and **improve trust of team** in them. |
+| **Maintenance Fatigue** | 😩 Tests that are not fixed with PRs gets passed on to QAs. When this happens frequently, which it often does, it results into **maintenance fatigue in QAs**. QAs find themselves **demotivated and stuck in this never ending cycle of fixing broken tests, with little to no time to do anything else that is meaningful.** | 😇 **When developers are responsibile for fixing the tests** that are broken due to their own changes, **it frees up time for testers in the team to do more meaningful work such as exploration testing, writing new tests for missing functionality,  learning new ways of testing and mentoring team members** on testing and automation. |
+| **To increase Test Coverage or not?** | 📉 Increased test run times **creates pressure on team to limit test suite growth and over optimise** existing tests rather than adding new tests to increase test coverage. | 📈 When teams have a solution and a setup that can always finish test in a fixed time (say 2 to 5 mins), it **encourages them to write new tests to increase test coverage for missing functionality and not worry about over optimization** to keep run-times in check. |
+| **Runner Scaling Efficiency** | 📉 **Adding more runners has diminishing returns** and doesn't guarantee proportional time savings | 💡 **Smart auto-scaling based on test load gives consistent and directly proportional performance benefits** |
+| **Costs and returns** | 💸 As we have seen, with more added runners the **infrastructure costs grow in proportion but with diminishing performance results**. | 💰 **Infrastructure costs are always in proportion to our test run demands and we only pay for what we use**. Nothing more. Nothing less. |
+| **Scalability Potential** | 🔒 **Approach doesn't scale well with increased amount of tests**. | 🚀 **Excellent scalability that grows efficiently with test suite expansion, and always keeping total run time fixed to our desired times (say 2 to 5 mins irrespective of total tests to run)** |
 
 
-### 2. 💡  Smart runner auto scaling has net positive impact on performance and costs.
-- **No deminishing results over time**: Since runners auto scale based on test load, there are no diminishing results over time.
-- **Lower costs (pay for what you use)**: Infrastructure costs are always in proportion to our test run demands.
-- **High scalability**: Approach scales very well with increased amount of tests.
+**Key Takeaway:** RunWright transforms system testing from a burden into an enabler, allowing teams to maintain fast feedback loops while scaling their test suites confidently.
 
-** At the time of writing this document, there are no known other solutions (paid or open source), that can do this using Playwright and GitHub.
+> ** At the time of writing this document, there are no known other solutions (paid or open source), that can do this using Playwright and GitHub.
 
 ## 💡 So how does it work?
 
@@ -84,7 +71,7 @@ To build a solution that is "time aware", and that can "auto-scale" based on the
 
 🔁 i.e.:
 -  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
-   - We get this value from [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file that is generated using a custom [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and updated on a post-commit hook.
+   - We get this value from [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file that is generated using a custom [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and commited on a post-commit hook.
 -  N = total number of tests to run.
    - We get the test scope by running playwright command with [`--list`](https://playwright.dev/docs/test-cli#all-options) option.
 -  TargetRunTime = total desired time to complete the run (in minutes)
@@ -127,15 +114,15 @@ Finally, we piece all this information together in this custom [runwright](https
 - Dev/Tester adds/updates a test.
 - Tries to commit changes. 
 - Pre-Commit git hook automatically runs `npx playwright test --only-changed` command to run tests. 
-- Custom [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) which is added in [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file as a reporter, runs after the tests are finished running and updates the [state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file with the affected test runs time.
-- The changes are commited (except the state.json file which is updated as a result of pre commit hook).
+- Custom [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) which is added in [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file as a reporter, runs after the tests are finished; running and updating the [state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file with the affected test runs time.
+- The changes staged at the time of running pre-commit hook are commited (except the state.json file which is updated as a result of pre-commit hook itself).
 - Post commit, a post-commit hook runs and commits the state.json file as well (skipping running of pre commit hooks again).
 
 ### Remote (on GitHub)
-- User provides a desired total run time (either pre-defined for pull-request triggers, to say 2 or 4 minutes or by giving manually if using a workflow dispatch workflow).
-- Based on the above `input run time`, and the information in `state.json` file and this `runwright` action, workflow now have all the information to create dynamic runners as per test load.
-- The exact tests that needs to run on each runner are also received from the action and run on each runner. 
-- Each runner then creates a `blob report` for the tests that it has run. 
+- User provides a desired total run time (either pre-defined-and-hard-coded for pull-request/push triggers, to say 2 or 4 minutes or by giving manually, if using a workflow dispatch workflow).
+- Based on the above `input run time`, and the information in `state.json` file, `runwright` action have all the information to calculate minimum required runners as per test load.
+- The exact tests that needs to run on each runner are also calculate and received from the action to the caller workflow. 
+- Each runner then runs the tests in its scope and creates a `blob report` for the tests that it has run. 
 - Once all runners are finished running tests, another job consolidates all the `blob reports` to create a consolidated `final test report`.
 - You can now verify if the total test run time was within your desired run time wishes. Your desired total run time should be always a little higher than your slowest tests, since that is your limiting factor. Tip: If you have very lengthy tests, try breaking them down into smaller atomic or partial integration tests. 
 
