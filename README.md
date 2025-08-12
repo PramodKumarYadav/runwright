@@ -28,7 +28,7 @@ We will explain this by looking into details of how Playwright Sharding works an
 
 However, there are two major flaws in this solution and setup. 
 
-### 1. Playwright sharding results into uneven test distribution on runners (in terms of run time)
+### 1. Playwright sharding results into uneven test distribution on runners.
 
 Playwright sharding distributes tests based on the **total count of tests ([balancing shards](https://playwright.dev/docs/test-sharding#balancing-shards)) and not based on how much time each test takes to complete**. Since **sharding is not time aware of every test while distribuing tests on runners**, it results into situations as below.
 
@@ -36,14 +36,14 @@ Playwright sharding distributes tests based on the **total count of tests ([bala
 
 ### 2. Fixed runners, that do not scale up or down based on the test load. 
 
-Playwright gives a [GitHub actions example](https://playwright.dev/docs/test-sharding#github-actions-example) that shows how we can use a  `GitHub metrix strategy` to distribute tests on **fixed number or runners** (4 in the given example). This results into inefficiencies as shown below.
+Playwright gives a [GitHub actions example](https://playwright.dev/docs/test-sharding#github-actions-example) that shows how we can use a  `GitHub matrix strategy` to distribute tests on **fixed number or runners** (4 in the given example). This results into inefficiencies as shown below.
 
 ![fixed runners](./docs/fixed-runners.png)
 
 ## Consequences and results
 
-### 1. 🐌 Slow system tests cannot be run and thus fixed with every pull request. 
-- **Broken trust on tests**: Tests that aren't fixed with PRs, fail frequently, often due to new changes, thus creating false positives, and over time bringing down teams trust in them.
+### 1. 🐌 Slow system tests cannot be run with every pull request. 
+- **Broken trust on tests**: Tests that aren't run (and thus fixed) with PRs, fail frequently, often due to new changes, thus creating false positives, and over time bringing down teams trust in them.
 - **Maintenance fatigue in QAs**: QAs find themselves being stuck in this never ending cycle of fixing broken tests, creating maintenance fatigue. Rather rather than doing actual testing, or writing new missing tests or learning and mentoring. 
 - **Discourage team from test expansion**: Increased test run times creates pressure on team to limit test suite growth rather than add more tests and improve test coverage.
 
@@ -65,14 +65,14 @@ Playwright gives a [GitHub actions example](https://playwright.dev/docs/test-sha
 
 ## Consequences and results
 
-### 1. ⚡️ Fast system test runs that can now be run and fixed with every pull request. 
+### 1. ⚡️ Fast system test runs that can now be run with every pull request. 
 - **Timely feedback from tests and tests that can be trusted**: Tests that are run and fixed with PRs, gives developers timely feedback. The chances of such tests failing post merge to main are very low and when they fail they often give **true positivies** and thus tests that the team can rely on.  
 - **No Maintenance fatigue in QAs**: When each developer is responsible for fixing the tests that are broken due to their own changes, maintenance scales well. It frees up time for QAs to do actual testing, writing new missing tests, learning useful techniques and mentoring other team members on testing and automation. 
 - **Encourage team for test expansion and increase coverage**: When teams have a solution and a setup that can always finish within their pre-defined desired test-run times, it encourages them to write missing tests to increase test coverage and not worry about over optimization to keep run-times in check.
 
 
 ### 2. 💡  Smart runner auto scaling has net positive impact on performance and costs.
-- **No Deminishing results over time**: Since runners auto scale based on test load, there are no diminishing results over time.
+- **No deminishing results over time**: Since runners auto scale based on test load, there are no diminishing results over time.
 - **Lower costs (pay for what you use)**: Infrastructure costs are always in proportion to our test run demands.
 - **High scalability**: Approach scales very well with increased amount of tests.
 
