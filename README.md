@@ -1,37 +1,145 @@
 # RunWright
 
-## Why this action?
-
-This [article](https://pramodkumaryadav.github.io/power-tester/blogs/finish-fast-in-2-mins.html) explains, in detail, the need for this action and the problem it solves. 
+> If you want to skip reading the context and go directly to getting started section, click [here](#getting-started). 
 
 ## 🚀 Core features
 
-In Summary the core features are:
-- The power to finish thousands of your tests in a pre defined desired run time (say 2 mins or 5 mins).
-- Smart runner orchestration that scales runners up or down based on your test load (where test load is in terms of time - not just count).
-- Equal test load distribution (in terms of execution time, not just count).
+- **Time-based completion**: Finish thousands of tests in your target timeframe (2-5 minutes).
+- **Dynamic auto scaling**: Auto-adjust runners based on test load.
+- **Smart distribution**: Balance workload by execution time, not test count.
 
 In below example, we see more than three thousand tests run in just 1.5 minutes with a desired run time of 2 mins in total. 
 
 <img src="docs/3k-tests-in-90-seconds.png" alt="fast test run" width="70%">
-
-## With RunWright
-
-## Even test load distribution based on desired run time to finish tests.
-
-<img src="docs/even-load-distribution.png" alt="even-load-distribution" width="70%">
-
-## Dynamic runners that scale up or down based on test load
-
-<img src="docs/dynamic-scaling-of-runners.png" alt="dynamic-scaling-of-runners" width="70%">
-
-** At the time of writing this document, there are no known other solutions (paid or open source), that can do this using Playwright and GitHub.
 
 ## Scope
 
 This action covers both execution modes in Playwright. i.e.
 - When `fullyParallel=true`. [ Parallel run all individual test cases on runners]
 - When `fullyParallel=false`. [ Parallel run all individual test files on runners]
+
+## Why this action? What's wrong with Playwright Sharding?
+
+
+We will explain this by looking into details of how Playwright Sharding works and what problems it brings with its implementation. 
+
+## With Playwright Sharding
+[Playwright Sharding](https://playwright.dev/docs/test-sharding#introduction) is a out-of-the-box solution from Playwright to allow distributed runs on any machine. Playwright team also gives examples of how to use sharding using [GitHub actions example](https://playwright.dev/docs/test-sharding#github-actions-example). 
+
+However, there are two major flaws in this solution and setup. 
+
+### 1. Playwright sharding results into uneven test distribution on runners (in terms of run time)
+
+Playwright sharding distributes tests based on the **total count of tests ([balancing shards](https://playwright.dev/docs/test-sharding#balancing-shards)) and not based on how much time each test takes to complete**. Since **sharding is not time aware of every test while distribuing tests on runners**, it results into situations as below.
+
+![uneven distribution](./docs/uneven-run-time.png)
+
+### 2. Fixed runners, that do not scale up or down based on the test load. 
+
+Playwright gives a [GitHub actions example](https://playwright.dev/docs/test-sharding#github-actions-example) that shows how we can use a  `GitHub metrix strategy` to distribute tests on **fixed number or runners** (4 in the given example). This results into inefficiencies as shown below.
+
+![fixed runners](./docs/fixed-runners.png)
+
+## Consequences and results
+
+### 1. 🐌 Slow system tests cannot be run and thus fixed with every pull request. 
+- **Broken trust on tests**: Tests that aren't fixed with PRs, fail frequently, often due to new changes, thus creating false positives, and over time bringing down teams trust in them.
+- **Maintenance fatigue in QAs**: QAs find themselves being stuck in this never ending cycle of fixing broken tests, creating maintenance fatigue. Rather rather than doing actual testing, or writing new missing tests or learning and mentoring. 
+- **Discourage team from test expansion**: Increased test run times creates pressure on team to limit test suite growth rather than add more tests and improve test coverage.
+
+
+### 2. 📉 Hardware scaling has diminishing returns.
+- **Deminishing results over time**: Adding more runners doesn't guarantee proportional time savings and have infact diminishing results.
+- **Escalating costs**: Infrastructure costs grow faster than their desired performance benefits.
+- **Poor scalability**: Approach doesn't scale well with increased amount of tests.
+
+## With RunWright
+
+## 1. Even test load distribution, based on your pre-decided total run time wishes, to finish tests.
+
+<img src="docs/even-load-distribution.png" alt="even-load-distribution" width="70%">
+
+## 2. Dynamic runners, that scale up or down based on test load.
+
+<img src="docs/dynamic-scaling-of-runners.png" alt="dynamic-scaling-of-runners" width="70%">
+
+## Consequences and results
+
+### 1. ⚡️ Fast system test runs that can now be run and fixed with every pull request. 
+- **Timely feedback from tests and tests that can be trusted**: Tests that are run and fixed with PRs, gives developers timely feedback. The chances of such tests failing post merge to main are very low and when they fail they often give **true positivies** and thus tests that the team can rely on.  
+- **No Maintenance fatigue in QAs**: When each developer is responsible for fixing the tests that are broken due to their own changes, maintenance scales well. It frees up time for QAs to do actual testing, writing new missing tests, learning useful techniques and mentoring other team members on testing and automation. 
+- **Encourage team for test expansion and increase coverage**: When teams have a solution and a setup that can always finish within their pre-defined desired test-run times, it encourages them to write missing tests to increase test coverage and not worry about over optimization to keep run-times in check.
+
+
+### 2. 💡  Smart runner auto scaling has net positive impact on performance and costs.
+- **No Deminishing results over time**: Since runners auto scale based on test load, there are no diminishing results over time.
+- **Lower costs (pay for what you use)**: Infrastructure costs are always in proportion to our test run demands.
+- **High scalability**: Approach scales very well with increased amount of tests.
+
+** At the time of writing this document, there are no known other solutions (paid or open source), that can do this using Playwright and GitHub.
+
+## 💡 So how does it work?
+
+To build a solution that is "time aware", and that can "auto-scale" based on the "current test-load", there are a few things that we need. 
+
+🔁 i.e.:
+-  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
+   - We get this value from [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file that is generated using a custom [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) file and updated on a post-commit hook.
+-  N = total number of tests to run.
+   - We get the test scope by running playwright command with [`--list`](https://playwright.dev/docs/test-cli#all-options) option.
+-  TargetRunTime = total desired time to complete the run (in minutes)
+   - We get this as [input from the user](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml). 
+-  TotalLoad = Σ T_i = total test load (in terms of test run time)
+   - We iterate over each runner to keep the `Σ T_i <= TargetRunTime`. 
+   - Note that the total run time for each runner is affected by the number of parallel threads and is explained in more details in the next section.
+-  Threads (Parallel threads per runner).
+   - [Recommended Threads per runner](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration) is half of cores; i.e. (Threads = Cores / 2). 
+-  Cores = number of cores per runner.
+   - For Linux runners, `NUM_CORES=$(nproc)`
+-  Runners = Total number of required runners.
+   - We calculate this as shown in the next section by using all this available information.
+
+📐 Equation
+
+Since we know every individual TestRunTimeForEachTest(i) from state.json, the total workload is:
+
+![alt text](./docs/image-1.png)
+
+Total parallel capacity available on the runners:
+
+![alt text](./docs/image-2.png)
+
+Equating Load and Capacity:
+
+![alt text](./docs/image-3.png)
+
+Solving for Runners:
+
+![alt text](./docs/image-4.png)
+
+Finally, we piece all this information together in this custom [runwright](https://github.com/marketplace/actions/runwright) GitHub action and give you:
+   - a `dynamic-matrix` 
+   - and `test-load-distribution-json` as output variables.
+
+## How does the end to end setup looks like?
+
+### Locally
+- Dev/Tester adds/updates a test.
+- Tries to commit changes. 
+- Pre-Commit git hook automatically runs `npx playwright test --only-changed` command to run tests. 
+- Custom [state-reporter.js](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state-reporter.js) which is added in [playwright.config.ts](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/playwright.config.ts) file as a reporter, runs after the tests are finished running and updates the [state.json](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json) file with the affected test runs time.
+- The changes are commited (except the state.json file which is updated as a result of pre commit hook).
+- Post commit, a post-commit hook runs and commits the state.json file as well (skipping running of pre commit hooks again).
+
+### Remote (on GitHub)
+- User provides a desired total run time (either pre-defined for pull-request triggers, to say 2 or 4 minutes or by giving manually if using a workflow dispatch workflow).
+- Based on the above `input run time`, and the information in `state.json` file and this `runwright` action, workflow now have all the information to create dynamic runners as per test load.
+- The exact tests that needs to run on each runner are also received from the action and run on each runner. 
+- Each runner then creates a `blob report` for the tests that it has run. 
+- Once all runners are finished running tests, another job consolidates all the `blob reports` to create a consolidated `final test report`.
+- You can now verify if the total test run time was within your desired run time wishes. Your desired total run time should be always a little higher than your slowest tests, since that is your limiting factor. Tip: If you have very lengthy tests, try breaking them down into smaller atomic or partial integration tests. 
+
+![end-to-end](./docs/finish-tests-in-x-mins.drawio.svg)
 
 ## Getting Started
 
@@ -103,48 +211,6 @@ There are 3 main steps involved:
 | 18 | Custom runner types compatibility | [Test Command Placeholder] | Should work with custom GitHub runner configurations | ✅ Compatible with custom runner specifications | ？ NOT-YET-TESTED |
 | 19 | Output format validation | [check any of previous runs] | All outputs should be valid JSON and consumable by workflows | ✅ All outputs are properly formatted and consumable | ✅ PASS |
 | 20 | Invalid time input (< 1 minute) | [Test Command Placeholder] | Should handle minimum time constraint appropriately | ✅ Validates minimum 1 minute requirement | ✅ [PASS](https://github.com/PramodKumarYadav/playwright-sandbox/actions/runs/16180781972) |
-
-## 💡 Inner workings
-
-For the curious minds, here are the equations that I used to device this solution. 
-
-🔁 Definitions
-
-Let:
--  TargetRunTime = total desired time to complete the run (in minutes)
-   - We get this as [input from the user](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml). 
--  Σ T_i = TestRunTimeForEachTest(i) = execution time of test i (from state.json)
-   - We get this value from [`state.json`](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/state.json)  file that is updated on a post-commit hook.
--  N = total number of tests to run.
-   - We get this by running playwright command with [`--list`](https://playwright.dev/docs/test-cli#all-options) option.
--  TotalLoad = Σ T_i = total test load (in terms of test run time)
-   - We iterate over each runner to keep the `Σ T_i <= TargetRunTime`. 
-   - Note that the total run time for each runner is affected by the number of parallel threads and is explained in more details in the next section.
--  Cores = number of cores per runner.
-   - For Linux runners, `NUM_CORES=$(nproc)`
--  Threads (per runner).
-   - [Recommended Threads per runner](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration) is half of cores; i.e. (Threads = Cores / 2). 
--  Runners = Total number of required runners.
-   - We get this from equation given in the next section.
-
-📐 Equation
-
-
-Since we know every individual TestRunTimeForEachTest(i) from state.json, the total workload is:
-
-![alt text](./docs/image-1.png)
-
-Total parallel capacity available on the runners:
-
-![alt text](./docs/image-2.png)
-
-Equating Load and Capacity:
-
-![alt text](./docs/image-3.png)
-
-Solving for Runners:
-
-![alt text](./docs/image-4.png)
 
 ## Troubleshooting
 
