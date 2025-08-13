@@ -89,7 +89,7 @@ To build a solution that is "time aware" and that can "auto-scale" based on the 
    - Providing runners as a GitHub dynamic matrix.
       - GitHub [fromJSON](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#fromjson) and [GITHUB_OUTPUT](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#using-an-output-to-define-two-matrices) variables makes it possible to pass dynamic matrix from one job to another. 
       - Note: It is good to note that it is not straightforward to pass the matrix variables using other variable options (such as setting as environment variables or taking from user as workflow input variables). Because of this reason, creating dynamic matrix remains a bit of a mystery and thats why most teams end up using hardcoded matrix in their workflows. 
-   - [Limiting maximum runners to a sensible limit (say 20)](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#defining-the-maximum-number-of-concurrent-jobs) to avoid spinning up hundreds of runners. 
+   - Pro Tip: Users can [Limit the maximum number of runners to a sensible limit (say 20)](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#defining-the-maximum-number-of-concurrent-jobs) in their caller workflow to avoid spinning up hundreds of runners, in case of a huge test set with very long tests and short total run time wishes.
 
 📐 Equation
 
