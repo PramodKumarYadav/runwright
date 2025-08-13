@@ -89,7 +89,7 @@ To build a solution that is "time aware" and that can "auto-scale" based on the 
    - Providing runners as a GitHub dynamic matrix.
       - GitHub [fromJSON](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#fromjson) and [GITHUB_OUTPUT](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#using-an-output-to-define-two-matrices) variables makes it possible to pass dynamic matrix from one job to another. 
       - Note: It is good to note that it is not straightforward to pass the matrix variables using other variable options (such as setting as environment variables or taking from user as workflow input variables). Because of this reason, creating dynamic matrix remains a bit of a mystery and thats why most teams end up using hardcoded matrix in their workflows. 
-   - Pro Tip: Users can [Limit the maximum number of runners to a sensible limit (say 20)](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#defining-the-maximum-number-of-concurrent-jobs) in their caller workflow to avoid spinning up hundreds of runners, in case of a huge test set with very long tests and short total run time wishes.
+   - Pro Tip: Users can [Limit the maximum number of runners to a sensible limit (say 20)](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#defining-the-maximum-number-of-concurrent-jobs) in their caller workflow to avoid spinning up hundreds of runners, in case of a huge test set with very long tests and short total run time wishes. Also good to note that this variable cannot be passed as input variable. So it must be hardcoded and fixed in the workflow files. 
 
 📐 Equation
 
@@ -164,8 +164,8 @@ There are 3 main steps involved:
 ### Step 2: Run tests based on the defined triggers (push to main, pull_request to main, schedule, on demand, etc.)
 
 - To test the setup, use one of the below workflows (either in your own test repository or fork the above sandbox repository to try it out).
-   - [run selected tests on demand - using reusable workflow that points to a fixed version say v2.1.0 of runwright action](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
-   - [run selected tests on demand - using standalone workflow - that points to the latest main version of runwright action](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml)
+   - [run selected tests on demand - using a reusable workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand.yml)
+   - [run selected tests on demand - using a standalone workflow](https://github.com/PramodKumarYadav/playwright-sandbox/blob/main/.github/workflows/run-any-tests-on-demand-sandbox.yml)
 
 > For reference, an example-workflow.yml file is also available in the root of the RunWright GitHub project. 
 
