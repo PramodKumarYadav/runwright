@@ -77,12 +77,19 @@ To build a solution that is "time aware" and that can "auto-scale" based on the 
 -  TotalLoad = Σ T_i = total test load (in terms of test run time)
    - We iterate over each runner to keep the `Σ T_i <= TargetRunTime`. 
    - Note that the total run time for each runner is affected by the number of parallel threads and is explained in more detail in the next section.
--  Threads (Parallel threads per runner).
-   - [Recommended Threads per runner](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration) is half of cores; i.e. (Threads = Cores / 2). 
 -  Cores = number of cores per runner.
-   - For Linux runners, `NUM_CORES=$(nproc)`
+   - Default [cores on GitHub linux public runners is 4](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories).
+   - Default [cores on GitHub linux private runners is 2](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-internal-and-private-repositories).
+   - For enterprise projects, it is possible to request for custom powerful [larger runners](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/runners/larger-runners) that have higher cores.
+   - For Linux runners, the action can calculate the cores at run time with this command: `NUM_CORES=$(nproc)`
+-  Threads (Parallel threads per runner).
+   - [Recommended Threads per runner](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration) is [half of cores](https://learn.microsoft.com/en-us/azure/playwright-testing/concept-determine-optimal-configuration#run-tests-locally); i.e. (Threads = Cores / 2). 
 -  Runners = Total number of required runners.
-   - We calculate this as shown in the next section by using all this available information.
+   - We calculate the optimal required runners as shown in the next section by using all the above available information.
+   - Providing runners as a GitHub dynamic matrix.
+      - GitHub [fromJSON](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#fromjson) and [GITHUB_OUTPUT](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#using-an-output-to-define-two-matrices) variables makes it possible to pass dynamic matrix from one job to another. 
+      - Note: It is good to note that it is not straightforward to pass the matrix variables using other variable options (such as setting as environment variables or taking from user as workflow input variables). Because of this reason, creating dynamic matrix remains a bit of a mystery and thats why most teams end up using hardcoded matrix in their workflows. 
+   - [Limiting maximum runners to a sensible limit (say 20)](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations#defining-the-maximum-number-of-concurrent-jobs) to avoid spinning up hundreds of runners. 
 
 📐 Equation
 
