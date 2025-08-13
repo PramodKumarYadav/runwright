@@ -209,7 +209,8 @@ There are 3 main steps involved:
 
 ## What's next?
 
-- [ ] Add option for when a user doesn't want to limit by time but wants to limit the maximum runners to use.
+- [ x ] Add option for when a user doesn't want to limit by time but wants to limit the maximum runners to use.
+  Added instructions in the [so-how-does-it-work -> runners -> pro-tip](#-so-how-does-it-work) section to explain how to achieve this at callers end. 
 
 ## Like my work and want to support or sponsor?
 
